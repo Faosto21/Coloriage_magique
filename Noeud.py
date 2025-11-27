@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
+from collections import defaultdict
 from dataclasses import dataclass
 
 
@@ -21,7 +22,7 @@ def overlap(debut1: datetime, debut2: datetime, fin1: datetime, fin2: datetime) 
     return (fin1 > debut2 and debut1 < fin2) or (fin2 > debut1 and debut2 < fin1)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True)  # Pour rendre immutable et être utilisé en clé
 class Noeud:
     """
     Classe représentant une opération de production avec comme attribut toutes les colonnes de Planification.
@@ -39,7 +40,7 @@ class Noeud:
     date_fin: datetime
 
     def est_voisin(
-        self, other: Noeud, max_machine_gap=2, max_time_gap=timedelta(days=21)
+        self, other: Noeud, max_machine_gap=3, max_time_gap=timedelta(days=21)
     ) -> bool:
         """
         Vérifie si deux noeuds sont voisins l'un de l'autre
@@ -59,3 +60,52 @@ class Noeud:
             min_fin = min(self.date_fin, other.date_fin)
             max_debut = max(self.date_debut, other.date_fin)
             return max_debut - min_fin <= max_time_gap
+
+    @staticmethod
+    def voisins_noeud(
+        liste_noeuds: list[Noeud],
+        max_machine_gap: int = 2,
+        max_time_gap: timedelta = timedelta(days=21),
+    ) -> dict[Noeud, set[Noeud]]:
+        """
+        Renvoie le dictionnaire des voisins de chaque noeud.
+
+        :param liste_noeuds: Liste de tous les noeuds dont il faut trouver les voisins.
+        :type liste_noeuds: list[Noeud]
+        :param max_machine_gap: Ecart maximale en terme d'indice dans la liste de machines pour être considéré voisin.
+        :type max_machine_gap: int
+        :param max_time_gap: Ecart maximale en terme de temps pour être considéré voisin.
+        :type max_time_gap: timedelta
+        :return: Dictionnaire avec pour clé un noeud et pour valeur l'ensemble de ses voisins
+        :rtype: dict[Noeud, set[Noeud]]
+        """
+        voisins: dict[Noeud, set[Noeud]] = {noeud: set() for noeud in liste_noeuds}
+        n = len(liste_noeuds)
+        for i in range(n - 1):
+            noeud1 = liste_noeuds[i]
+            for j in range(i + 1, n):
+                noeud2 = liste_noeuds[j]
+                if noeud1.est_voisin(noeud2, max_machine_gap, max_time_gap):
+                    voisins[noeud1].add(noeud2)
+                    voisins[noeud2].add(noeud1)
+        return voisins
+
+    @staticmethod
+    def partition(
+        liste_noeuds: list[Noeud], critere: str = "codeof"
+    ) -> dict[any, set[Noeud]]:
+        """
+        Renvoie la partition de la liste des noeuds en fonction d'un critère choisi
+
+        :param liste_noeuds: Liste des Noeuds dont on veut faire la partition.
+        :type liste_noeuds: list[Noeud]
+        :param critere: Critère pour la partition, c'est un des attributs des Noeuds.
+        :type critere: str
+        :return: Dictionnaire avec pour clé les valeurs du critère et en valeur l'ensemble des noeuds ayant cette valeur de critère.
+        :rtype: dict[Any, set[Noeud]]
+        """
+        partition = defaultdict(set)
+        for noeud in liste_noeuds:
+            valeur_critere = noeud.__getattribute__(critere)
+            partition[valeur_critere].add(noeud)
+        return partition

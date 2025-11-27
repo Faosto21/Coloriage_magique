@@ -9,7 +9,7 @@ class AlgorithmeColoriage(ABC):
 
     @abstractmethod
     def trouver_coloriage(
-        self, partition: dict[str, set[Noeud]]
+        self, partition: dict[str, set[Noeud]], voisins: dict[Noeud, set[Noeud]]
     ) -> dict[int, list[str]]:
         """
         A partir d'une partition des noeuds selon un critère, associe une couleur à chaque partie de la partition.\n
