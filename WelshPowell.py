@@ -54,6 +54,14 @@ class WelshPowell(AlgorithmeColoriage):
             couleurs_noeuds[premier] = couleur_actuelle
             meme_couleur = [premier]
 
+            for crit, ens in partition.items():
+                if premier in ens:
+                    for n in ens:
+                        couleurs_noeuds[n] = couleur_actuelle
+                        if n not in meme_couleur:
+                            meme_couleur.append(n)
+                    break
+
             # On parcourt la liste et on colorie tous les noeuds non voisins dans la meme couleur
             for noeud in liste_noeuds:
                 if noeud not in couleurs_noeuds:
@@ -72,7 +80,11 @@ class WelshPowell(AlgorithmeColoriage):
             # on suppose que tous les noeuds de la partie ont la même couleur
             noeud_exemple = next(iter(noeuds)) # pour recuperer un noeud dans l'ensemble des noeuds associes a la valeur de critere
             c = couleurs_noeuds[noeud_exemple]
-            res[c] = critere
+            
+            if c not in res:
+                res[c] = []
+
+            res[c].append(critere)
 
 
         return res
@@ -85,7 +97,7 @@ if __name__ == '__main__':
     Noeud3 = Noeud(3, 3, "3", "3", "3", "3", "3", datetime(2025, 11, 29, 9, 0, 0), datetime(2025, 11, 29, 10, 0, 0))
     Noeud4 = Noeud(4, 4, "4", "4", "4", "4", "4", datetime(2025, 11, 30, 9, 0, 0), datetime(2025, 11, 30, 10, 0, 0))
 
-    partition = {"val_crit1" : {Noeud1, Noeud2}, "val_crit2" : {Noeud3, Noeud4}}
+    partition = {"val_crit1" : {Noeud1}, "val_crit2" : {Noeud2}, "val_crit3" : {Noeud3, Noeud4}}
     voisins = {Noeud1 : {Noeud2, Noeud4}, 
                Noeud2 : {Noeud1, Noeud3, Noeud4},
                Noeud3 : {Noeud2}, 
