@@ -1,0 +1,2 @@
+centre;codprod;codof;sequence;codop;dtedeb;dtefin
+MAC101;PROD01;OF00000001;0000;0010;2025-11-24 10:48:00.000;2025-11-25 00:00:00.000
