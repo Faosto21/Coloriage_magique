@@ -1,5 +1,6 @@
 from AlgorithmeColoriage import AlgorithmeColoriage
 from Noeud import Noeud
+import time
 
 
 class DSATUR(AlgorithmeColoriage):
@@ -15,6 +16,7 @@ class DSATUR(AlgorithmeColoriage):
         :param voisins: dico avec chaque noeud en clé et l'ensemble des voisins du noeud en valuer
         :return: renvoie un dico avec la couleur en clé et la liste des criteres à colorier avec cette couleur.
         """
+        start = time.time()
         # Initialisation
         coloriage: dict[int, set[str]] = {}
         dsat = {noeud: 0 for noeud in voisins.keys()}
@@ -83,5 +85,6 @@ class DSATUR(AlgorithmeColoriage):
             for voisin in voisins_partition[critere_choisi]:
                 if voisin in non_colorie:
                     dsat[voisin] += 1
-
+        end = time.time()
+        print(end - start)
         return coloriage

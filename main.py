@@ -1,11 +1,49 @@
 from datetime import datetime, timedelta
 import tkinter as tk
-import pandas as pd
 import colorsys
+import pandas as pd
+
 
 from Noeud import Noeud
 from AlgorithmeColoriage import AlgorithmeColoriage
 from DSATUR import DSATUR
+from DSATUR2 import DSATUR2
+
+
+class CanvasTooltip:
+    """
+    Classe pour afficher les attributs d'un noeud quand on hover sur la case.
+    """
+
+    def __init__(self, canvas, text):
+        self.canvas = canvas
+        self.text = text
+        self.tip = None
+
+    def show(self, x, y):
+        if self.tip:
+            return
+        self.tip = tk.Toplevel(self.canvas)
+        self.tip.wm_overrideredirect(True)
+
+        label = tk.Label(
+            self.tip,
+            text=self.text,
+            background="lightyellow",
+            relief="solid",
+            borderwidth=1,
+            padx=5,
+            pady=2,
+            font=("Tahoma", 8),
+        )
+        label.pack()
+
+        self.tip.wm_geometry(f"+{x+15}+{y+15}")
+
+    def hide(self):
+        if self.tip:
+            self.tip.destroy()
+        self.tip = None
 
 
 class DiagrammeGant(tk.Frame):
@@ -66,6 +104,12 @@ class DiagrammeGant(tk.Frame):
         )
         self.dessine()
 
+        # Ajustement des scroll_region pour éviter le décalage entre la time line et les opérations
+        main_bbox = self.canvas.bbox("all")
+        xmin, _, xmax, _ = main_bbox
+        self.canvas.configure(scrollregion=main_bbox)
+        self.header.configure(scrollregion=(xmin, 0, xmax, 40))
+
     def scroll_both(self, *args):
         """
         Permet de scroll à la fois le header( ligne de temps) et le canva(diagramme avec les noeuds) avec la scroll_bar horizontale.
@@ -109,17 +153,16 @@ class DiagrammeGant(tk.Frame):
         """
         ## !!! A finir, echelle de temps décalé par rapport aux opérations
         self.header.delete("all")
-        date = self.min_date.replace(hour=0, minute=0) + timedelta(days=1)
+        start = datetime(self.min_date.year, self.min_date.month, self.min_date.day)
+        date = start
 
         while date <= self.max_date:
             x = self.temps_vers_abscisse(date)
-            self.header.create_line(x, 0, x, 40, fill="black")
+            self.header.create_line(x, 0, x, 40)
             self.header.create_text(
                 x + 2, 20, anchor="w", text=date.strftime("%d/%m"), font=("Arial", 6)
             )
             date += timedelta(days=1)
-
-        self.header.configure(scrollregion=self.header.bbox("all"))
 
     def dessine_noeud(self):
         """
@@ -127,7 +170,7 @@ class DiagrammeGant(tk.Frame):
 
         :param self: Description
         """
-
+        self.canvas.delete("all")
         lane_height = 80
         rect_height = 80
 
@@ -158,13 +201,36 @@ class DiagrammeGant(tk.Frame):
                     )
                     y = 20 + self.map_machines[noeud.centre] * lane_height
                     hex_color = "#%02x%02x%02x" % rgb
-                    self.canvas.create_rectangle(
+
+                    # Dessin du rectangle
+                    rectangle = self.canvas.create_rectangle(
                         x1,
                         y,
                         x2,
                         y + rect_height,
                         fill=hex_color,
                         outline="black",
+                    )
+
+                    # Et ajout des informations quand on hover
+                    tooltip_text = (
+                        f"Centre: {noeud.centre}\n"
+                        f"Prod: {noeud.codeprod}\n"
+                        f"OF: {noeud.codeof}\n"
+                        f"Sequence: {noeud.sequence}\n"
+                        f"Operation: {noeud.codeop}\n"
+                        f"Start: {noeud.date_debut}\n"
+                        f"End: {noeud.date_fin}"
+                    )
+                    tooltip = CanvasTooltip(self.canvas, tooltip_text)
+
+                    self.canvas.tag_bind(
+                        rectangle,
+                        "<Enter>",
+                        lambda e, t=tooltip: t.show(e.x_root, e.y_root),
+                    )
+                    self.canvas.tag_bind(
+                        rectangle, "<Leave>", lambda e, t=tooltip: t.hide()
                     )
 
                     # Avec le texte à l'intérieur
@@ -176,8 +242,6 @@ class DiagrammeGant(tk.Frame):
                         text=text,
                         font=("Arial", 8),
                     )
-
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 
 if __name__ == "__main__":
@@ -215,7 +279,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.title("Diagramme de Gant")
-    algo = DSATUR()
+    algo = DSATUR2()
     diagramme = DiagrammeGant(
         root, liste_noeuds, mapping_machines, algo, max_time_gap=timedelta(days=7)
     )
