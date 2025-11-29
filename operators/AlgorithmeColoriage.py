@@ -1,7 +1,5 @@
 from abc import abstractmethod, ABC
-from Noeud import Noeud
-import numpy as np
-import time, datetime
+from core.Noeud import Noeud
 
 class AlgorithmeColoriage(ABC):
     """
@@ -10,8 +8,8 @@ class AlgorithmeColoriage(ABC):
 
     @abstractmethod
     def trouver_coloriage(
-        self, partition: dict[str, set[Noeud]]
-    ) -> dict[int, list[str]]:
+        self, partition: dict[str, set[Noeud]], voisins: dict[Noeud, set[Noeud]]
+    ) -> dict[int, set[str]]:
         """
         A partir d'une partition des noeuds selon un critère, associe une couleur à chaque partie de la partition.\n
         Par exemple, le résultat est sous la forme : \n
@@ -42,7 +40,6 @@ class DSATUR(AlgorithmeColoriage):
         :return: renvoie un dico avec la couleur en clé et la liste des criteres à colorier avec cette couleur.
         """
         # Initialisation
-        start = time.time()
         coloriage = {} # objet qui sera retourné à la fin, il donnera pour chaque couleur ses criteres
         dsat = {noeud : 0 for noeud in voisins.keys()} # permet de suivre le score dsat de chaque noeud
         non_colorie = set(voisins.keys()) # pour avoir un suivi des noeuds non coloriés
@@ -96,9 +93,8 @@ class DSATUR(AlgorithmeColoriage):
                     # On retrouve le critere du voisin
                     critere_du_voisin = critere_du_noeud[voisin_du_critere]
 
-                    # On ajoute la couleur aux couleurs_adjacentes du critere_du_voisin si elle n'y est pas
-                    if couleur not in couleurs_adjacentes[critere_du_voisin]:
-                        couleurs_adjacentes[critere_du_voisin].add(couleur)
+                    # On ajoute la couleur aux couleurs_adjacentes du critere_du_voisin
+                    couleurs_adjacentes[critere_du_voisin].add(couleur)
                     
                     # On met à jour le dsat du voisin du critère
                     dsat[voisin_du_critere] = len(couleurs_adjacentes[critere_du_voisin])
@@ -106,14 +102,12 @@ class DSATUR(AlgorithmeColoriage):
             # On retire tous les noeuds de ce critère de non_colorie
             non_colorie.difference_update(partition[critere_choisi])
 
-        end = time.time()
-        print(end - start)
         return coloriage
 
 if __name__=="__main__":
     from datetime import datetime, timedelta
     import pandas as pd
-    from Noeud import Noeud
+    from core.Noeud import Noeud
 
     data = pd.read_csv("ressources/Planification.txt", sep=";")
     machines = pd.read_csv("ressources/Machine.txt")
