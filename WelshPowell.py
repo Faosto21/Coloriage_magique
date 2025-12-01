@@ -29,15 +29,27 @@ class WelshPowell(AlgorithmeColoriage):
         :return: Dictionnaire dont les clés sont le numéro de couleur et la valeur la liste des valeurs de critères qui seront coloriés de cette couleur
         :rtype: dict[int, list[str]]
         """
+        voisins_partition = {
+            critere: set.union(
+                *[voisins[noeud] for noeud in noeuds]
+            )  # Dictionnaires des voisins de chaque partie de partition
+            for critere, noeuds in partition.items()
+        }
+
         # On recree la liste de tous les sommets
         liste_noeuds = []
         for val in partition:
             for noeud in partition[val]:
                 liste_noeuds.append(noeud)
 
+        critere = {}
+        for valeur, noeuds in partition.items():
+            for noeud in noeuds:
+                critere[noeud] = valeur
         # Initialisation du dictionnaire associant les couleurs aux noeuds
         couleurs_noeuds = {}
         couleur_actuelle = 1
+        meme_couleur = []
 
         # On trie les sommets de la liste par ordre decroissant
         liste_noeuds.sort(key=lambda noeud: degre(noeud, voisins), reverse=True)
@@ -48,30 +60,30 @@ class WelshPowell(AlgorithmeColoriage):
             # On attribue un couleur au premier non colore par ordre de degre decroissant
             for noeud in liste_noeuds:
                 if noeud not in couleurs_noeuds:
-                    premier = noeud
+                    noeud_choisi=noeud
+                    premier = critere[noeud]
                     break # on trouve le premier et on sort de la boucle
 
-            couleurs_noeuds[premier] = couleur_actuelle
-            meme_couleur = [premier]
+            ensemble_voisins = (
+                set.union(*[voisins_partition[critere] for critere in meme_couleur])
+                if meme_couleur
+                else set()
+            )
+            print(ensemble_voisins)
+            #if premier not in (set.union(*[voisins_partition[critere] for critere in meme_couleur])):
 
-            for crit, ens in partition.items():
-                if premier in ens:
-                    for n in ens:
-                        couleurs_noeuds[n] = couleur_actuelle
-                        if n not in meme_couleur:
-                            meme_couleur.append(n)
-                    break
+            if noeud not in ensemble_voisins:
+                meme_couleur.append(premier)
 
-            # On parcourt la liste et on colorie tous les noeuds non voisins dans la meme couleur
-            for noeud in liste_noeuds:
-                if noeud not in couleurs_noeuds:
-                    # le noeud ne doit etre adjacent a aucun sommet deja de cette couleur
-                    if all(noeud not in voisins[sommet] and sommet not in voisins[noeud] for sommet in meme_couleur):
-                        couleurs_noeuds[noeud] = couleur_actuelle
-                        meme_couleur.append(noeud)
+            else:
+                couleur_actuelle += 1
+                meme_couleur = [premier]
+                
 
-            # On passe a la couleur suivante
-            couleur_actuelle += 1
+            for i,noeud in enumerate(partition[premier]):
+                print(i)
+                couleurs_noeuds[noeud] = couleur_actuelle
+                                    
 
         # On construit maintenant le dictionnaire resultat
         res = {}
@@ -79,13 +91,15 @@ class WelshPowell(AlgorithmeColoriage):
         for critere, noeuds in partition.items():
             # on suppose que tous les noeuds de la partie ont la même couleur
             noeud_exemple = next(iter(noeuds)) # pour recuperer un noeud dans l'ensemble des noeuds associes a la valeur de critere
-            c = couleurs_noeuds[noeud_exemple]
+            if noeud_exemple in couleurs_noeuds:
+                c = couleurs_noeuds[noeud_exemple]
+            else:
+                c = couleurs_noeuds[critere]
             
             if c not in res:
                 res[c] = []
 
             res[c].append(critere)
-
 
         return res
     
