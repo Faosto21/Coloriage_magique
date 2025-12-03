@@ -5,6 +5,7 @@ import pandas as pd
 from core.Noeud import Noeud
 from core.DiagrammeGant import DiagrammeGant
 from operators.AlgorithmeColoriage import DSATUR
+from operators.WelshPowell import WelshPowell
 
 if __name__ == "__main__":
     # Initialisation des données
@@ -25,7 +26,7 @@ if __name__ == "__main__":
         )
         for i, ope in data.iterrows()
     ]
-    
+
     # Initialisation des objets
     root = tk.Tk()
     root.title("Diagramme de Gant")
