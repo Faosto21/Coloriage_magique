@@ -1,5 +1,9 @@
 from abc import abstractmethod, ABC
 from core.Noeud import Noeud
+import numpy as np
+import time
+from operators.distance_couleurs import distance_couleurs
+from collections import Counter
 
 class AlgorithmeColoriage(ABC):
     """
@@ -40,6 +44,7 @@ class DSATUR(AlgorithmeColoriage):
         :return: renvoie un dico avec la couleur en clé et la liste des criteres à colorier avec cette couleur.
         """
         # Initialisation
+        start = time.time()
         coloriage = {} # objet qui sera retourné à la fin, il donnera pour chaque couleur ses criteres
         dsat = {noeud : 0 for noeud in voisins.keys()} # permet de suivre le score dsat de chaque noeud
         non_colorie = set(voisins.keys()) # pour avoir un suivi des noeuds non coloriés
@@ -73,13 +78,17 @@ class DSATUR(AlgorithmeColoriage):
             # On trouve le critère choisi du noeud sélectionné
             critere_choisi = critere_du_noeud[noeud_choisi]
             
-            # On trouve la plus petite couleur disponible pour le critère en évitant les couleurs adjacentes
+            # On cherche les couleurs possibles pour le critère en évitant les couleurs adjacentes
             # car 2 criteres adjacent ne peuvent avoir la meme couleur
-            couleur = 1
-            while True:
-                if couleur not in couleurs_adjacentes[critere_choisi]:
-                    break
-                couleur += 1
+            couleurs_possibles = set(coloriage.keys())
+            couleurs_possibles.difference_update(couleurs_adjacentes[critere_choisi])
+
+            # On choisit une couleur aléatoire parmi les possibles
+            if couleurs_possibles:
+                couleur = np.random.choice(list(couleurs_possibles)) # Conversion en liste pour random
+            # Sinon on prend la couleur suivante du coloriage
+            else:
+                couleur = len(coloriage) + 1
 
             # On ajoute la couleur au coloriage si elle n'y est pas et on y associe le critère
             if couleur not in coloriage:
@@ -102,6 +111,26 @@ class DSATUR(AlgorithmeColoriage):
             # On retire tous les noeuds de ce critère de non_colorie
             non_colorie.difference_update(partition[critere_choisi])
 
+        # On va maintenant chercher les couleurs pour optimiser le coloriage
+        # On créé un dictionnaire pour regarder la différence de couleur avec ses couleurs
+        # voisins pour chaque couleur dans le coloriage
+        distance_min_couleurs = {}
+        for col, liste_critere in coloriage.items():
+            for critere in liste_critere:
+                couleurs_voisines = couleurs_adjacentes[critere]
+                min_couleur = 100
+                # On regarde la différence de couleur entre la couleur cible et ses couleurs voisines
+                for couleur_voisine in couleurs_voisines:
+                    min_nouvelle_couleur = distance_couleurs(col, couleur_voisine)
+                    # Si la nouvelle couleur est plus proche qu'avant on la remplace
+                    if min_nouvelle_couleur < min_couleur:
+                        min_couleur = min_nouvelle_couleur
+                        distance_min_couleurs[col] = min_nouvelle_couleur
+
+        print(f"La distance minimale entre chaque couleur est : \n{distance_min_couleurs}")
+        print(f"Les distances obtenus sont :\n{Counter(distance_min_couleurs.values())}")
+        end = time.time()
+        print(f"Durée = {end-start}")
         return coloriage
 
 if __name__=="__main__":
