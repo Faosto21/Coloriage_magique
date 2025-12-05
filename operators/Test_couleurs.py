@@ -2,6 +2,9 @@ from ast import Return
 import colorsys
 import tkinter as tk
 import itertools
+from typing import List, Tuple, Annotated
+
+from operators.test import generateur_couleur
 
 def show_colors(rgb_tuples):
     root = tk.Tk()
@@ -20,7 +23,7 @@ def show_colors(rgb_tuples):
     x0, x1 = 10, 300
 
     for i, (r, g, b) in enumerate(rgb_tuples):
-        hex_color = "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))
+        hex_color = "#%02x%02x%02x" % (int(r), int(g), int(b))
 
         y0 = 10 + i * (box_height + 5)
         y1 = y0 + box_height
@@ -89,13 +92,7 @@ def choix_coloriage(coloriage : dict[int, set[str]]) -> dict[int, set[str]]:
 
     return meilleur_coloriage
 
-
-
 if __name__ == "__main__":
-    #N = 50  # Nombre de couleurs
-    #hsv_tuples = [(n / N, 0.8, 0.9) for n in range(N)]
-    #rgb_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-    #show_colors(rgb_tuples)
-
-    coloriage_test = {1 : {"val_critere1", "val_critere2"}, 2 : {"val_critere3"}, 3 : {"val_critere4"}}
-    print(evaluer_coloriage(coloriage_test))
+    n = 50 # nb couleur
+    liste_couleurs = generateur_couleur(n)
+    show_colors(list(liste_couleurs))

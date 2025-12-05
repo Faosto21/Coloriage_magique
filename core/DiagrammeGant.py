@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 import tkinter as tk
 import pandas as pd
-import colorsys
+import time
 
+from operators.test import generateur_couleur
 from core.Noeud import Noeud
 from operators.AlgorithmeColoriage import AlgorithmeColoriage
 from operators.AlgorithmeColoriage import DSATUR
@@ -98,7 +99,7 @@ class DiagrammeGant(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
 
         self.coloriage = self.algo_coloriage.trouver_coloriage(
-            self.partition, self.voisins
+            self.liste_noeuds
         )
         self.dessine()
 
@@ -183,8 +184,7 @@ class DiagrammeGant(tk.Frame):
                 font=("Arial", 11, "bold"),
             )
         N = len(self.coloriage.keys())
-        hsv_tuples = [(n / N, 0.8, 0.9) for n in range(N)]
-        rgb_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+        rgb_tuples = list(generateur_couleur(N))
         for couleur, critere_par_couleur in self.coloriage.items():
             for critere in critere_par_couleur:
                 for noeud in self.partition[critere]:
@@ -193,9 +193,9 @@ class DiagrammeGant(tk.Frame):
 
                     r, g, b = rgb_tuples[couleur - 1]
                     rgb = (
-                        int(r * 255),
-                        int(g * 255),
-                        int(b * 255),
+                        int(r),
+                        int(g),
+                        int(b),
                     )
                     y = 20 + self.map_machines[noeud.centre] * lane_height
                     hex_color = "#%02x%02x%02x" % rgb

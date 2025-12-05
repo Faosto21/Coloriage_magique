@@ -1,0 +1,4 @@
+basic-colormath == 1.1.1
+colormath
+numpy == 2.3.5
+pandas

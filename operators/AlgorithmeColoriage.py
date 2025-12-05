@@ -1,9 +1,11 @@
 from abc import abstractmethod, ABC
+from typing import List
 from core.Noeud import Noeud
 import numpy as np
 import time
-from operators.distance_couleurs import distance_couleurs
-from collections import Counter
+from datetime import timedelta
+from operators.test import generateur_couleur, evaluer
+import basic_colormath
 
 class AlgorithmeColoriage(ABC):
     """
@@ -34,9 +36,8 @@ class DSATUR(AlgorithmeColoriage):
     Algorithme de DSATUR
     """
     def trouver_coloriage(
-            self, 
-            partition: dict[str, set[Noeud]],
-            voisins : dict[Noeud, set[Noeud]]
+            self,
+            liste_noeuds : List[Noeud]
             ) -> dict[int, set[str]]:
         """
         :param partition: dico avec en clé la valeur du critere et la liste des noeuds ayant ce critere en valeurs
@@ -45,6 +46,8 @@ class DSATUR(AlgorithmeColoriage):
         """
         # Initialisation
         start = time.time()
+        partition = Noeud.partition(liste_noeuds)  # Partition de la liste de noeud selon le critère par défaut codeof
+        voisins = Noeud.voisins_noeud(liste_noeuds)  # Dictionnaire des voisins des noeuds
         coloriage = {} # objet qui sera retourné à la fin, il donnera pour chaque couleur ses criteres
         dsat = {noeud : 0 for noeud in voisins.keys()} # permet de suivre le score dsat de chaque noeud
         non_colorie = set(voisins.keys()) # pour avoir un suivi des noeuds non coloriés
@@ -70,6 +73,17 @@ class DSATUR(AlgorithmeColoriage):
         # Si un critere a une couleur adjacente alors il n'a pas le droit de l'avoir
         couleurs_adjacentes = {critere: set() for critere in partition.keys()} 
 
+        # Initialisation pour optimisation des distances
+        # On choisit un voisinage plus petit pour la distance entre couleurs
+        voisins_directs = Noeud.voisins_noeud(liste_noeuds, max_machine_gap=2, max_time_gap=timedelta(days=4))
+        voisins_directs_partition = {}
+        for critere, noeuds in partition.items():
+            voisins_critere = set()
+            for noeud in noeuds:
+                voisins_critere.update(voisins_directs[noeud])
+            voisins_directs_partition[critere] = voisins_critere
+        couleurs_adjacentes_directs = {critere: set() for critere in partition.keys()}
+
         while non_colorie:
             # Sélection du nœud avec DSAT max (degré max en cas d'égalité)
             noeud_choisi = max(non_colorie, 
@@ -88,7 +102,7 @@ class DSATUR(AlgorithmeColoriage):
                 couleur = np.random.choice(list(couleurs_possibles)) # Conversion en liste pour random
             # Sinon on prend la couleur suivante du coloriage
             else:
-                couleur = len(coloriage) + 1
+                couleur = len(coloriage)
 
             # On ajoute la couleur au coloriage si elle n'y est pas et on y associe le critère
             if couleur not in coloriage:
@@ -104,6 +118,9 @@ class DSATUR(AlgorithmeColoriage):
 
                     # On ajoute la couleur aux couleurs_adjacentes du critere_du_voisin
                     couleurs_adjacentes[critere_du_voisin].add(couleur)
+
+                    if voisin_du_critere in voisins_directs_partition[critere_choisi]:
+                        couleurs_adjacentes_directs[critere_du_voisin].add(couleur)
                     
                     # On met à jour le dsat du voisin du critère
                     dsat[voisin_du_critere] = len(couleurs_adjacentes[critere_du_voisin])
@@ -114,23 +131,35 @@ class DSATUR(AlgorithmeColoriage):
         # On va maintenant chercher les couleurs pour optimiser le coloriage
         # On créé un dictionnaire pour regarder la différence de couleur avec ses couleurs
         # voisins pour chaque couleur dans le coloriage
+
+        # On commence par générer le nombre de couleurs nécessaires et les mapper pour faire des
+        # opérations sur ces valeurs en coicidant les clés de coloriage et celles ci
+        liste_couleurs = generateur_couleur(len(coloriage))
+        print(f"La distance minimale de base est \n{evaluer(liste_couleurs)}")
+        mapping_couleurs = dict(enumerate(liste_couleurs))
         distance_min_couleurs = {}
+
         for col, liste_critere in coloriage.items():
             for critere in liste_critere:
-                couleurs_voisines = couleurs_adjacentes[critere]
+                couleurs_voisines = couleurs_adjacentes_directs[critere]
                 min_couleur = 100
+
                 # On regarde la différence de couleur entre la couleur cible et ses couleurs voisines
                 for couleur_voisine in couleurs_voisines:
-                    min_nouvelle_couleur = distance_couleurs(col, couleur_voisine)
-                    # Si la nouvelle couleur est plus proche qu'avant on la remplace
-                    if min_nouvelle_couleur < min_couleur:
-                        min_couleur = min_nouvelle_couleur
-                        distance_min_couleurs[col] = min_nouvelle_couleur
+                    if couleur_voisine != col:
+                        min_nouvelle_couleur = basic_colormath.get_delta_e(
+                            mapping_couleurs[col], 
+                            mapping_couleurs[couleur_voisine]
+                            )
 
-        print(f"La distance minimale entre chaque couleur est : \n{distance_min_couleurs}")
-        print(f"Les distances obtenus sont :\n{Counter(distance_min_couleurs.values())}")
+                        # Si la nouvelle couleur est plus proche qu'avant on la remplace
+                        if min_nouvelle_couleur < min_couleur:
+                            min_couleur = min_nouvelle_couleur
+                            distance_min_couleurs[col] = min_nouvelle_couleur
         end = time.time()
         print(f"Durée = {end-start}")
+        print(f"La plus petite distance selon le delta e 2000 entre tous les voisins direct est :\n{np.min(list(distance_min_couleurs.values()))}")
+        print(f"La moyenne des distances selon le delta e 2000 entre tous les voisins direct est :\n{np.average(list(distance_min_couleurs.values()))}")
         return coloriage
 
 if __name__=="__main__":
@@ -155,13 +184,8 @@ if __name__=="__main__":
         )
         for i, ope in data.iterrows()
     ]
-    partition = Noeud.partition(
-        liste_noeuds,
-        critere="codeof"
-    )
-    voisins = Noeud.voisins_noeud(liste_noeuds, max_machine_gap=4, max_time_gap=timedelta(days=5))
 
     # Test de DSATUR
     algo_dsat = DSATUR()
-    coloriage = algo_dsat.trouver_coloriage(partition=partition, voisins=voisins)
-    print(coloriage)
+    coloriage = algo_dsat.trouver_coloriage(liste_noeuds=liste_noeuds)
+    # print(coloriage)
