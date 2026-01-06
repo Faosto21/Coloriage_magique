@@ -28,6 +28,7 @@ class CanvasTooltip:
             self.tip,
             text=self.text,
             background="lightyellow",
+            foreground="black",
             relief="solid",
             borderwidth=1,
             padx=5,
@@ -158,7 +159,7 @@ class DiagrammeGant(tk.Frame):
             x = self.temps_vers_abscisse(date)
             self.header.create_line(x, 0, x, 40)
             self.header.create_text(
-                x + 2, 20, anchor="w", text=date.strftime("%d/%m"), font=("Arial", 6)
+                x + 2, 20, anchor="w", text=date.strftime("%d/%m"), font=("Arial", 6), fill = "black"
             )
             date += timedelta(days=1)
 
@@ -181,6 +182,7 @@ class DiagrammeGant(tk.Frame):
                 anchor="w",
                 text=centre,
                 font=("Arial", 11, "bold"),
+                fill = "black"
             )
         N = len(self.coloriage.keys())
         hsv_tuples = [(n / N, 0.8, 0.9) for n in range(N)]
@@ -239,6 +241,7 @@ class DiagrammeGant(tk.Frame):
                         anchor="w",
                         text=text,
                         font=("Arial", 8),
+                        fill = "black"
                     )
 
 
