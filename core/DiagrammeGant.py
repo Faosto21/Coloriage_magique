@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import tkinter as tk
+from tkinter import ttk
 import pandas as pd
 import colorsys
 
@@ -68,6 +69,31 @@ class DiagrammeGant(tk.Frame):
     ):
         super().__init__(fenetre)
 
+        # Barre de contrôle (au-dessus du header)
+        self.controls = tk.Frame(self)
+        self.controls.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        self.grid_columnconfigure(0, weight=1)
+
+        tk.Label(self.controls, text="Critère :", font=("Arial", 10)).pack(side="left")
+
+        self.critere_var = tk.StringVar(value="codeop")
+        self.critere_box = ttk.Combobox(
+            self.controls,
+            textvariable=self.critere_var,
+            values=Noeud.criteres_partition,
+            state="readonly",
+            width=12,
+        )
+        self.critere_box.pack(side="left", padx=5)
+
+        self.valider_btn = ttk.Button(
+            self.controls,
+            text="Valider",
+            command=self.on_change_critere
+        )
+        self.valider_btn.pack(side="left", padx=5)
+
+
         self.liste_noeuds = liste_noeuds
         self.partition = Noeud.partition(self.liste_noeuds)
         self.voisins = Noeud.voisins_noeud(
@@ -90,12 +116,12 @@ class DiagrammeGant(tk.Frame):
         )
 
         # Layout
-        self.header.grid(row=0, column=0, sticky="ew")
-        self.canvas.grid(row=1, column=0, sticky="nsew")
-        self.hbar.grid(row=2, column=0, sticky="ew")
-        self.vbar.grid(row=1, column=1, sticky="ns")
+        self.header.grid(row=1, column=0, sticky="ew")
+        self.canvas.grid(row=2, column=0, sticky="nsew")
+        self.hbar.grid(row=3, column=0, sticky="ew")
+        self.vbar.grid(row=2, column=1, sticky="ns")
 
-        self.grid_rowconfigure([0, 1], weight=1)
+        self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
         self.coloriage = self.algo_coloriage.trouver_coloriage(
@@ -143,6 +169,28 @@ class DiagrammeGant(tk.Frame):
 
         self.dessine_ligne_de_temps()
         self.dessine_noeud()
+
+    def on_change_critere(self, event=None):
+        critere = self.critere_var.get()
+
+        # Recalcule la partition et le coloriage avec le nouveau critère
+        self.partition = Noeud.partition(self.liste_noeuds, critere=critere)
+
+        # self.voisins ne dépend pas du critère (voisinage entre noeuds)
+        self.coloriage = self.algo_coloriage.trouver_coloriage(
+            self.partition, self.voisins
+        )
+
+        # Redessine
+        self.dessine()
+
+        # Remet à jour les scrollregions (comme dans __init__)
+        main_bbox = self.canvas.bbox("all")
+        if main_bbox:
+            xmin, _, xmax, _ = main_bbox
+            self.canvas.configure(scrollregion=main_bbox)
+            self.header.configure(scrollregion=(xmin, 0, xmax, 40))
+
 
     def dessine_ligne_de_temps(self):
         """
