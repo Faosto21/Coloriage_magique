@@ -94,7 +94,7 @@ class Noeud:
 
     @staticmethod
     def partition(
-        liste_noeuds: list[Noeud], critere: str = "codeop"
+        liste_noeuds: list[Noeud], critere: str = "codop"
     ) -> dict[any, set[Noeud]]:
         """
         Renvoie la partition de la liste des noeuds en fonction d'un critère choisi

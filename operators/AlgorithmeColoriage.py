@@ -37,7 +37,8 @@ class DSATUR(AlgorithmeColoriage):
     """
     def trouver_coloriage(
             self,
-            liste_noeuds : List[Noeud]
+            liste_noeuds : List[Noeud],
+            critere : str
             ) -> dict[int, set[str]]:
         """
         :param partition: dico avec en clé la valeur du critere et la liste des noeuds ayant ce critere en valeurs
@@ -46,7 +47,7 @@ class DSATUR(AlgorithmeColoriage):
         """
         # Initialisation
         start = time.time()
-        partition = Noeud.partition(liste_noeuds)  # Partition de la liste de noeud selon le critère par défaut codeof
+        partition = Noeud.partition(liste_noeuds, critere=critere)  # Partition de la liste de noeud selon le critère par défaut codeof
         voisins = Noeud.voisins_noeud(liste_noeuds)  # Dictionnaire des voisins des noeuds
         coloriage = {} # objet qui sera retourné à la fin, il donnera pour chaque couleur ses criteres
         dsat = {noeud : 0 for noeud in voisins.keys()} # permet de suivre le score dsat de chaque noeud
@@ -201,18 +202,16 @@ def ecritureFichierColoriage(coloriage, chemin_donnees, choix_critere):
 
             # colonne critrere = index 
             critere = cols[index] if len(cols) > index else ""
-            couleur = couleur_par_critere.get(critere, "")  # vide si pas trouve
+            couleur = couleur_par_critere.get(str(critere), "")  # vide si pas trouve
 
             f_out.write(line + ";" + str(couleur) + "\n")
     
-    
-
 if __name__=="__main__":
     from datetime import datetime, timedelta
     import pandas as pd
     from core.Noeud import Noeud
 
-    data = pd.read_csv("ressources/Planification.txt", dtype=str,sep=";")
+    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
     machines = pd.read_csv("ressources/Machine.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
     liste_noeuds = [
@@ -231,11 +230,12 @@ if __name__=="__main__":
     ]
     partition = Noeud.partition(
         liste_noeuds,
-        critere="codeof"
+        critere="codof"
     )
     voisins = Noeud.voisins_noeud(liste_noeuds, max_machine_gap=4, max_time_gap=timedelta(days=5))
 
     # Test de DSATUR
     algo_dsat = DSATUR()
-    coloriage = algo_dsat.trouver_coloriage(partition=partition, voisins=voisins)
-    print(coloriage)
+    coloriage = algo_dsat.trouver_coloriage(liste_noeuds=liste_noeuds, critere="codof")
+    print(f"Le coloriage est : {coloriage}")
+    ecritureFichierColoriage(coloriage, "ressources/Planification.txt", "codof")
