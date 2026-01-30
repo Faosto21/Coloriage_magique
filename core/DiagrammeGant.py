@@ -4,7 +4,7 @@ from tkinter import ttk
 import pandas as pd
 import time
 
-from operators.test import generateur_couleur
+from operators.Generateur_couleur import generateur_couleur
 from core.Noeud import Noeud
 from operators.AlgorithmeColoriage import AlgorithmeColoriage
 from operators.AlgorithmeColoriage import DSATUR
