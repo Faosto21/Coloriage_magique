@@ -4,7 +4,7 @@ from core.Noeud import Noeud
 import numpy as np
 import time
 from datetime import timedelta
-from operators.test import generateur_couleur, evaluer
+from operators.Generateur_couleur import generateur_couleur, evaluer
 import basic_colormath
 
 class AlgorithmeColoriage(ABC):
@@ -97,7 +97,7 @@ class DSATUR(AlgorithmeColoriage):
             couleurs_possibles = set(coloriage.keys())
             couleurs_possibles.difference_update(couleurs_adjacentes[critere_choisi])
 
-            # On choisit une couleur aléatoire parmi les possibles
+            # On choisit une couleur aléatoire pour le critere parmi les possibles
             if couleurs_possibles:
                 couleur = np.random.choice(list(couleurs_possibles)) # Conversion en liste pour random
             # Sinon on prend la couleur suivante du coloriage
