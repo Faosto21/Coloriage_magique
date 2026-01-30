@@ -7,7 +7,7 @@ from pathlib import Path
 
 from operators.GenerateurCouleur import generateur_couleur
 from core.Noeud import Noeud
-from operators.AlgorithmeColoriage import AlgorithmeColoriage
+from operators.AlgorithmeColoriage import AlgorithmeColoriage, ecritureFichierColoriage
 from operators.AlgorithmeColoriage import DSATUR
 from operators.GenerateurTabulaire import generateur_tabulaire
 
@@ -184,7 +184,10 @@ class DiagrammeGant(tk.Frame):
         self.coloriage = self.algo_coloriage.trouver_coloriage(
             self.liste_noeuds, critere
         )
-
+        # On écrit le résultat du coloriage dans un fichier texte
+        ecritureFichierColoriage(
+            self.coloriage, "ressources/Planification_modifiee.txt", critere
+        )
         # Redessine
         self.dessine()
 

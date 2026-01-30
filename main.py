@@ -16,7 +16,6 @@ if __name__ == "__main__":
     data = pd.read_csv("ressources/Planification_modifiee.txt", dtype=str, sep=";")
     machines = pd.read_csv("ressources/Machine_modifie.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
-    print(mapping_machines)
     liste_noeuds = [
         Noeud(
             i,
