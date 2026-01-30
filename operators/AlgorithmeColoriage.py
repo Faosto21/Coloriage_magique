@@ -69,7 +69,7 @@ class DSATUR(AlgorithmeColoriage):
         # Couleurs adjacentes par critere, permettra de mettre à jour le dsat des voisins du critere colorié
         # Si un critere a une couleur adjacente alors il n'a pas le droit de l'avoir
         couleurs_adjacentes = {critere: set() for critere in partition.keys()} 
-
+        print(list(degre.keys())[0])
         while non_colorie:
             # Sélection du nœud avec DSAT max (degré max en cas d'égalité)
             noeud_choisi = max(non_colorie, 
@@ -126,19 +126,64 @@ class DSATUR(AlgorithmeColoriage):
                     if min_nouvelle_couleur < min_couleur:
                         min_couleur = min_nouvelle_couleur
                         distance_min_couleurs[col] = min_nouvelle_couleur
-
+        print(coloriage.items())
         print(f"La distance minimale entre chaque couleur est : \n{distance_min_couleurs}")
         print(f"Les distances obtenus sont :\n{Counter(distance_min_couleurs.values())}")
         end = time.time()
         print(f"Durée = {end-start}")
         return coloriage
 
+
+def ecritureFichierColoriage(coloriage, chemin_donnees, choix_critere):
+    """
+    :param coloriage: un dico avec la couleur en clé et la liste des criteres à colorier avec cette couleur.
+    :param choix_critere: une string correspondant au critère selectionné
+    :param chemin_donnees: une string correspondant au chemin du jeu de données utilisé
+    :return: None. Créer une copie du fichier d'entrée et ajoute une colonne donnant la couleur associée à chaque case 
+    du tableau.
+    """
+
+    couleur_par_critere = {}
+    # On inverse le sens du dictionnaire coloriage dans couleur_par_critere
+    for couleur, criteres in coloriage.items():
+        for c in criteres:
+            couleur_par_critere[c] = couleur
+
+    # Lecture et ecriture du fichier
+    
+    with open(chemin_donnees, "r", encoding="utf-8") as f_in, \
+         open("ressources/Resultats_planification.txt", "w", encoding="utf-8") as f_out:
+
+        # Header du fichier
+        header = f_in.readline().rstrip("\n")
+        colonnes = header.split(";")
+
+        index = colonnes.index(choix_critere)
+
+        f_out.write(header + ";couleur\n")
+
+        # Lignes de donnees 
+        for line in f_in:
+            line = line.rstrip("\n")
+            if line == "":
+                continue
+
+            cols = line.split(";")
+
+            # colonne critrere = index 
+            critere = cols[index] if len(cols) > index else ""
+            couleur = couleur_par_critere.get(critere, "")  # vide si pas trouve
+
+            f_out.write(line + ";" + str(couleur) + "\n")
+    
+    
+
 if __name__=="__main__":
     from datetime import datetime, timedelta
     import pandas as pd
     from core.Noeud import Noeud
 
-    data = pd.read_csv("ressources/Planification.txt", sep=";")
+    data = pd.read_csv("ressources/Planification.txt", dtype=str,sep=";")
     machines = pd.read_csv("ressources/Machine.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
     liste_noeuds = [
@@ -157,7 +202,7 @@ if __name__=="__main__":
     ]
     partition = Noeud.partition(
         liste_noeuds,
-        critere="codeof"
+        critere="codop"
     )
     voisins = Noeud.voisins_noeud(liste_noeuds, max_machine_gap=4, max_time_gap=timedelta(days=5))
 
@@ -165,3 +210,6 @@ if __name__=="__main__":
     algo_dsat = DSATUR()
     coloriage = algo_dsat.trouver_coloriage(partition=partition, voisins=voisins)
     print(coloriage)
+
+    # Test ecriture fichier
+    ecritureFichierColoriage(coloriage,"ressources/Planification.txt", "codop")
