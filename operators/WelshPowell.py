@@ -1,6 +1,7 @@
 from operators.AlgorithmeColoriage import AlgorithmeColoriage
 from core.Noeud import Noeud
 from datetime import datetime
+from typing import List
 
 
 # Fonction pour calculer le degre des voisins
@@ -15,7 +16,7 @@ class WelshPowell(AlgorithmeColoriage):
     """
 
     def trouver_coloriage(
-        self, partition: dict[str, set[Noeud]], voisins: dict[Noeud, set[Noeud]]
+        self, liste_noeuds: List[Noeud], critere: str
     ) -> dict[int, set[str]]:
         """
         A partir d'une partition des noeuds selon un critère, associe une couleur à chaque partie de la partition.\n
@@ -31,18 +32,14 @@ class WelshPowell(AlgorithmeColoriage):
         :return: Dictionnaire dont les clés sont le numéro de couleur et la valeur la liste des valeurs de critères qui seront coloriés de cette couleur
         :rtype: dict[int, list[str]]
         """
+        partition = Noeud.partition(liste_noeuds, critere=critere)  # Partition de la liste de noeud selon le critère par défaut codeof
+        voisins = Noeud.voisins_noeud(liste_noeuds)  # Dictionnaire des voisins des noeuds
         voisins_partition = {
             critere: set.union(
                 *[voisins[noeud] for noeud in noeuds]
             )  # Dictionnaires des voisins de chaque partie de partition
             for critere, noeuds in partition.items()
         }
-
-        # On recree la liste de tous les sommets
-        liste_noeuds = []
-        for val in partition:
-            for noeud in partition[val]:
-                liste_noeuds.append(noeud)
 
         critere = {}
         for valeur, noeuds in partition.items():
@@ -104,62 +101,34 @@ class WelshPowell(AlgorithmeColoriage):
 
 
 if __name__ == "__main__":
+    from datetime import datetime, timedelta
+    import pandas as pd
+    from core.Noeud import Noeud
+
+    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
+    machines = pd.read_csv("ressources/Machine.txt")
+    mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
+    liste_noeuds = [
+        Noeud(
+            i,
+            mapping_machines[ope["centre"]],
+            ope["centre"],
+            ope["codprod"],
+            ope["codof"],
+            ope["sequence"],
+            ope["codop"],
+            datetime.fromisoformat(ope["dtedeb"]),
+            datetime.fromisoformat(ope["dtefin"]),
+        )
+        for i, ope in data.iterrows()
+    ]
+    partition = Noeud.partition(
+        liste_noeuds,
+        critere="codof"
+    )
+    voisins = Noeud.voisins_noeud(liste_noeuds, max_machine_gap=4, max_time_gap=timedelta(days=5))
+
+    # Test de DSATUR
     wp = WelshPowell()
-    Noeud1 = Noeud(
-        1,
-        1,
-        "1",
-        "1",
-        "1",
-        "1",
-        "1",
-        datetime(2025, 11, 27, 9, 0, 0),
-        datetime(2025, 11, 27, 10, 0, 0),
-    )
-    Noeud2 = Noeud(
-        2,
-        2,
-        "2",
-        "2",
-        "2",
-        "2",
-        "2",
-        datetime(2025, 11, 28, 9, 0, 0),
-        datetime(2025, 11, 28, 10, 0, 0),
-    )
-    Noeud3 = Noeud(
-        3,
-        3,
-        "3",
-        "3",
-        "3",
-        "3",
-        "3",
-        datetime(2025, 11, 29, 9, 0, 0),
-        datetime(2025, 11, 29, 10, 0, 0),
-    )
-    Noeud4 = Noeud(
-        4,
-        4,
-        "4",
-        "4",
-        "4",
-        "4",
-        "4",
-        datetime(2025, 11, 30, 9, 0, 0),
-        datetime(2025, 11, 30, 10, 0, 0),
-    )
-
-    partition = {
-        "val_crit1": {Noeud1},
-        "val_crit2": {Noeud2},
-        "val_crit3": {Noeud3, Noeud4},
-    }
-    voisins = {
-        Noeud1: {Noeud2, Noeud4},
-        Noeud2: {Noeud1, Noeud3, Noeud4},
-        Noeud3: {Noeud2},
-        Noeud4: {Noeud1, Noeud2},
-    }
-
-    print(wp.trouver_coloriage(partition, voisins))
+    coloriage = wp.trouver_coloriage(liste_noeuds=liste_noeuds, critere="codof")
+    print(f"Le coloriage est : {coloriage}")
