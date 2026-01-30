@@ -1,2 +1,4 @@
 coloriage/
 __pycache__/
+.venv/
+venv/
