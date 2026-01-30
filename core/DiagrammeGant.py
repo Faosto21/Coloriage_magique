@@ -67,8 +67,8 @@ class DiagrammeGant(tk.Frame):
         liste_noeuds: list[Noeud],
         map_machines: dict[str, int],
         algo_coloriage: AlgorithmeColoriage,
-        max_machine_gap: int = 3,
-        max_time_gap: timedelta = timedelta(days=21),
+        max_machine_gap: int = 8,
+        max_time_gap: timedelta = timedelta(days=7),
     ):
         super().__init__(fenetre)
 
@@ -79,7 +79,7 @@ class DiagrammeGant(tk.Frame):
 
         tk.Label(self.controls, text="Critère :", font=("Arial", 10)).pack(side="left")
 
-        self.critere_var = tk.StringVar(value="codop")
+        self.critere_var = tk.StringVar(value="codof")
         self.critere_box = ttk.Combobox(
             self.controls,
             textvariable=self.critere_var,
@@ -137,6 +137,20 @@ class DiagrammeGant(tk.Frame):
         xmin, _, xmax, _ = main_bbox
         self.canvas.configure(scrollregion=main_bbox)
         self.header.configure(scrollregion=(xmin, 0, xmax, 40))
+
+        self.bind_mousewheel()
+
+    def bind_mousewheel(self):
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_vertical)
+        self.canvas.bind_all("<Shift-MouseWheel>", self._on_mousewheel_horizontal)
+
+    def _on_mousewheel_vertical(self, event):
+        if event.delta:
+            self.canvas.yview_scroll(-int(event.delta / 60), "units")
+
+    def _on_mousewheel_horizontal(self, event):
+        if event.delta:
+            self.scroll_both("scroll", -int(event.delta / 60), "units")
 
     def scroll_both(self, *args):
         """
