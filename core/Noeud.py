@@ -32,13 +32,15 @@ class Noeud:
     id_noeud: int
     indice_machine: int
     centre: str
-    codeprod: str
-    codeof: str
+    codprod: str
+    codof: str
     sequence: str
-    codeop: str
+    codop: str
     date_debut: datetime
     date_fin: datetime
 
+    criteres_partition = ("codop", "codof", "codprod", "centre", "sequence")
+    
     def est_voisin(
         self, other: Noeud, max_machine_gap=3, max_time_gap=timedelta(days=21)
     ) -> bool:
@@ -92,7 +94,7 @@ class Noeud:
 
     @staticmethod
     def partition(
-        liste_noeuds: list[Noeud], critere: str = "codeof"
+        liste_noeuds: list[Noeud], critere: str = "codeop"
     ) -> dict[any, set[Noeud]]:
         """
         Renvoie la partition de la liste des noeuds en fonction d'un critère choisi

@@ -9,9 +9,10 @@ from operators.WelshPowell import WelshPowell
 
 if __name__ == "__main__":
     # Initialisation des données
-    data = pd.read_csv("ressources/Planification.txt", sep=";")
+    data = pd.read_csv("ressources/Planification.txt", dtype=str,sep=";")
     machines = pd.read_csv("ressources/Machine.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
+    print(data.head())
     liste_noeuds = [
         Noeud(
             i,
