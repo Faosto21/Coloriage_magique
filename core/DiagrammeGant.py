@@ -87,12 +87,9 @@ class DiagrammeGant(tk.Frame):
         self.critere_box.pack(side="left", padx=5)
 
         self.valider_btn = ttk.Button(
-            self.controls,
-            text="Valider",
-            command=self.on_change_critere
+            self.controls, text="Valider", command=self.on_change_critere
         )
         self.valider_btn.pack(side="left", padx=5)
-
 
         self.liste_noeuds = liste_noeuds
         self.partition = Noeud.partition(self.liste_noeuds)
@@ -191,7 +188,6 @@ class DiagrammeGant(tk.Frame):
             self.canvas.configure(scrollregion=main_bbox)
             self.header.configure(scrollregion=(xmin, 0, xmax, 40))
 
-
     def dessine_ligne_de_temps(self):
         """
         Dessine la barre du temps au dessus du diagramme.
@@ -207,7 +203,12 @@ class DiagrammeGant(tk.Frame):
             x = self.temps_vers_abscisse(date)
             self.header.create_line(x, 0, x, 40)
             self.header.create_text(
-                x + 2, 20, anchor="w", text=date.strftime("%d/%m"), font=("Arial", 6), fill = "black"
+                x + 2,
+                20,
+                anchor="w",
+                text=date.strftime("%d/%m"),
+                font=("Arial", 6),
+                fill="black",
             )
             date += timedelta(days=1)
 
@@ -230,7 +231,7 @@ class DiagrammeGant(tk.Frame):
                 anchor="w",
                 text=centre,
                 font=("Arial", 11, "bold"),
-                fill = "black"
+                fill="black",
             )
         N = len(self.coloriage.keys())
         hsv_tuples = [(n / N, 0.8, 0.9) for n in range(N)]
@@ -289,13 +290,13 @@ class DiagrammeGant(tk.Frame):
                         anchor="w",
                         text=text,
                         font=("Arial", 8),
-                        fill = "black"
+                        fill="black",
                     )
 
 
 if __name__ == "__main__":
 
-    data = pd.read_csv("ressources/Planification.txt", sep=";")
+    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
     machines = pd.read_csv("ressources/Machine.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
 
