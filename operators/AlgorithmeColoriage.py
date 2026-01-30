@@ -4,7 +4,7 @@ from core.Noeud import Noeud
 import numpy as np
 import time
 from datetime import timedelta
-from operators.Generateur_couleur import generateur_couleur, evaluer
+from operators.GenerateurCouleur import generateur_couleur, evaluer
 import basic_colormath
 
 class AlgorithmeColoriage(ABC):
@@ -14,7 +14,7 @@ class AlgorithmeColoriage(ABC):
 
     @abstractmethod
     def trouver_coloriage(
-        self, partition: dict[str, set[Noeud]], voisins: dict[Noeud, set[Noeud]]
+        self, liste_noeuds : List[Noeud], critere: str
     ) -> dict[int, set[str]]:
         """
         A partir d'une partition des noeuds selon un critère, associe une couleur à chaque partie de la partition.\n

@@ -108,6 +108,6 @@ class Noeud:
         """
         partition = defaultdict(set)
         for noeud in liste_noeuds:
-            valeur_critere = noeud.__getattribute__(critere)
+            valeur_critere = noeud.__getattribute__(str(critere))
             partition[valeur_critere].add(noeud)
         return partition

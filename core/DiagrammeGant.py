@@ -3,11 +3,13 @@ import tkinter as tk
 from tkinter import ttk
 import pandas as pd
 import time
+from pathlib import Path
 
-from operators.Generateur_couleur import generateur_couleur
+from operators.GenerateurCouleur import generateur_couleur
 from core.Noeud import Noeud
 from operators.AlgorithmeColoriage import AlgorithmeColoriage
 from operators.AlgorithmeColoriage import DSATUR
+from operators.GenerateurTabulaire import generateur_tabulaire
 
 
 class CanvasTooltip:
@@ -77,7 +79,7 @@ class DiagrammeGant(tk.Frame):
 
         tk.Label(self.controls, text="Critère :", font=("Arial", 10)).pack(side="left")
 
-        self.critere_var = tk.StringVar(value="codeop")
+        self.critere_var = tk.StringVar(value="codop")
         self.critere_box = ttk.Combobox(
             self.controls,
             textvariable=self.critere_var,
@@ -93,7 +95,10 @@ class DiagrammeGant(tk.Frame):
         self.valider_btn.pack(side="left", padx=5)
 
         self.liste_noeuds = liste_noeuds
-        self.partition = Noeud.partition(self.liste_noeuds)
+        # Partition initiale selon le critère sélectionné
+        self.partition = Noeud.partition(
+            self.liste_noeuds, critere=self.critere_var.get()
+        )
         self.voisins = Noeud.voisins_noeud(
             self.liste_noeuds, max_machine_gap, max_time_gap
         )
@@ -123,7 +128,7 @@ class DiagrammeGant(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
 
         self.coloriage = self.algo_coloriage.trouver_coloriage(
-            self.liste_noeuds
+            self.liste_noeuds, self.critere_var.get()
         )
         self.dessine()
 
@@ -175,8 +180,9 @@ class DiagrammeGant(tk.Frame):
         self.partition = Noeud.partition(self.liste_noeuds, critere=critere)
 
         # self.voisins ne dépend pas du critère (voisinage entre noeuds)
+        # On passe la liste de noeuds et la valeur du critère à l'algorithme
         self.coloriage = self.algo_coloriage.trouver_coloriage(
-            self.partition, self.voisins
+            self.liste_noeuds, critere
         )
 
         # Redessine
@@ -264,10 +270,10 @@ class DiagrammeGant(tk.Frame):
                     # Et ajout des informations quand on hover
                     tooltip_text = (
                         f"Centre: {noeud.centre}\n"
-                        f"Prod: {noeud.codeprod}\n"
-                        f"OF: {noeud.codeof}\n"
+                        f"Prod: {noeud.codprod}\n"
+                        f"OF: {noeud.codof}\n"
                         f"Sequence: {noeud.sequence}\n"
-                        f"Operation: {noeud.codeop}\n"
+                        f"Operation: {noeud.codop}\n"
                         f"Start: {noeud.date_debut}\n"
                         f"End: {noeud.date_fin}"
                     )
@@ -283,7 +289,7 @@ class DiagrammeGant(tk.Frame):
                     )
 
                     # Avec le texte à l'intérieur
-                    text = f"{noeud.codeof} \n {noeud.codeop} \n {noeud.codeprod}"
+                    text = f"{noeud.codof} \n {noeud.codop} \n {noeud.codprod}"
                     self.canvas.create_text(
                         x1 + 5,
                         y + rect_height / 2,
@@ -295,9 +301,11 @@ class DiagrammeGant(tk.Frame):
 
 
 if __name__ == "__main__":
-
-    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
-    machines = pd.read_csv("ressources/Machine.txt")
+    generateur_tabulaire(
+        Path("ressources/Planification.txt"), Path("ressources/Machine.txt")
+    )  # On modifie Planning et Machine en cherchant les chevauchements
+    data = pd.read_csv("ressources/Planification_modifiee.txt", dtype=str, sep=";")
+    machines = pd.read_csv("ressources/Machine_modifie.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
 
     liste_noeuds = [
