@@ -1,18 +1,21 @@
 from datetime import datetime, timedelta
 import tkinter as tk
 import pandas as pd
-
+from pathlib import Path
 from core.Noeud import Noeud
 from core.DiagrammeGant import DiagrammeGant
 from operators.AlgorithmeColoriage import DSATUR
 from operators.WelshPowell import WelshPowell
+from operators.GenerateurTabulaire import generateur_tabulaire
 
 if __name__ == "__main__":
     # Initialisation des données
-    data = pd.read_csv("ressources/Planification.txt", dtype=str,sep=";")
-    machines = pd.read_csv("ressources/Machine.txt")
+    generateur_tabulaire(
+        Path("ressources/Planification.txt"), Path("ressources/Machine.txt")
+    )  # On modifie Planning et Machine en cherchant les chevauchements
+    data = pd.read_csv("ressources/Planification_modifiee.txt", dtype=str, sep=";")
+    machines = pd.read_csv("ressources/Machine_modifie.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
-    print(data.head())
     liste_noeuds = [
         Noeud(
             i,

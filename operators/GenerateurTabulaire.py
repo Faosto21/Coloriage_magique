@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
 
+
 def generateur_tabulaire(chemin_data: Path, chemin_machines: Path):
     data = pd.read_csv(chemin_data, dtype=str, sep=";")
     data["dtedeb"] = pd.to_datetime(data["dtedeb"])
@@ -20,8 +21,10 @@ def generateur_tabulaire(chemin_data: Path, chemin_machines: Path):
                 dernier_idx = group[-1]
                 fin_precedente = data.loc[dernier_idx, "dtefin"]
                 debut_suivant = ope["dtedeb"]
-                if fin_precedente <= debut_suivant:  # On vérifie qu'il n'y a pas de chevauchement
-                    group.append(idx) # On ajoute l'INDEX au groupe
+                if (
+                    fin_precedente <= debut_suivant
+                ):  # On vérifie qu'il n'y a pas de chevauchement
+                    group.append(idx)  # On ajoute l'INDEX au groupe
                     placed = True
                     break
             # Si chevauchement sur toutes les autres operations on crée un nouveau groupe
@@ -50,8 +53,9 @@ def generateur_tabulaire(chemin_data: Path, chemin_machines: Path):
                 data.loc[operation_idx, "centre"] = f"{machine}_{num}"
 
     # On retransforme en .txt
-    data.to_csv(new_data_path, index=False)
+    data.to_csv(new_data_path, index=False, sep=";")
     machines.to_csv(new_machine_path, index=False)
+
 
 if __name__ == "__main__":
     generateur_tabulaire(

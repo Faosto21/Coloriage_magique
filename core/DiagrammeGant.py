@@ -3,11 +3,14 @@ import tkinter as tk
 from tkinter import ttk
 import pandas as pd
 import time
+from pathlib import Path
 
 from operators.GenerateurCouleur import generateur_couleur
 from core.Noeud import Noeud
-from operators.AlgorithmeColoriage import AlgorithmeColoriage
+from operators.AlgorithmeColoriage import AlgorithmeColoriage, ecritureFichierColoriage
 from operators.AlgorithmeColoriage import DSATUR
+from operators.GenerateurTabulaire import generateur_tabulaire
+
 
 class CanvasTooltip:
     """
@@ -64,8 +67,8 @@ class DiagrammeGant(tk.Frame):
         liste_noeuds: list[Noeud],
         map_machines: dict[str, int],
         algo_coloriage: AlgorithmeColoriage,
-        max_machine_gap: int = 3,
-        max_time_gap: timedelta = timedelta(days=21),
+        max_machine_gap: int = 8,
+        max_time_gap: timedelta = timedelta(days=7),
     ):
         super().__init__(fenetre)
 
@@ -76,7 +79,7 @@ class DiagrammeGant(tk.Frame):
 
         tk.Label(self.controls, text="Critère :", font=("Arial", 10)).pack(side="left")
 
-        self.critere_var = tk.StringVar(value="codop")
+        self.critere_var = tk.StringVar(value="codof")
         self.critere_box = ttk.Combobox(
             self.controls,
             textvariable=self.critere_var,
@@ -93,7 +96,9 @@ class DiagrammeGant(tk.Frame):
 
         self.liste_noeuds = liste_noeuds
         # Partition initiale selon le critère sélectionné
-        self.partition = Noeud.partition(self.liste_noeuds, critere=self.critere_var.get())
+        self.partition = Noeud.partition(
+            self.liste_noeuds, critere=self.critere_var.get()
+        )
         self.voisins = Noeud.voisins_noeud(
             self.liste_noeuds, max_machine_gap, max_time_gap
         )
@@ -123,8 +128,7 @@ class DiagrammeGant(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
 
         self.coloriage = self.algo_coloriage.trouver_coloriage(
-            self.liste_noeuds,
-            self.critere_var.get()
+            self.liste_noeuds, self.critere_var.get()
         )
         self.dessine()
 
@@ -133,6 +137,20 @@ class DiagrammeGant(tk.Frame):
         xmin, _, xmax, _ = main_bbox
         self.canvas.configure(scrollregion=main_bbox)
         self.header.configure(scrollregion=(xmin, 0, xmax, 40))
+
+        self.bind_mousewheel()
+
+    def bind_mousewheel(self):
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_vertical)
+        self.canvas.bind_all("<Shift-MouseWheel>", self._on_mousewheel_horizontal)
+
+    def _on_mousewheel_vertical(self, event):
+        if event.delta:
+            self.canvas.yview_scroll(-int(event.delta / 60), "units")
+
+    def _on_mousewheel_horizontal(self, event):
+        if event.delta:
+            self.scroll_both("scroll", -int(event.delta / 60), "units")
 
     def scroll_both(self, *args):
         """
@@ -180,7 +198,10 @@ class DiagrammeGant(tk.Frame):
         self.coloriage = self.algo_coloriage.trouver_coloriage(
             self.liste_noeuds, critere
         )
-
+        # On écrit le résultat du coloriage dans un fichier texte
+        ecritureFichierColoriage(
+            self.coloriage, "ressources/Planification_modifiee.txt", critere
+        )
         # Redessine
         self.dessine()
 
@@ -297,9 +318,11 @@ class DiagrammeGant(tk.Frame):
 
 
 if __name__ == "__main__":
-
-    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
-    machines = pd.read_csv("ressources/Machine.txt")
+    generateur_tabulaire(
+        Path("ressources/Planification.txt"), Path("ressources/Machine.txt")
+    )  # On modifie Planning et Machine en cherchant les chevauchements
+    data = pd.read_csv("ressources/Planification_modifiee.txt", dtype=str, sep=";")
+    machines = pd.read_csv("ressources/Machine_modifie.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
 
     liste_noeuds = [
