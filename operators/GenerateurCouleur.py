@@ -1,3 +1,12 @@
+""" 
+Ce fichier sert à générer les couleurs de manière optimale en utilisant la distance delta e 2000
+Le but est d'en générer 10 fois trop et ensuite de choisir de manière à maximiser la distance 
+entre toutes les couleurs 2 à 2 et garantir un résultat visuel optimal
+On considère que 2 couleurs sont différentes avec un score entre 5 et 10 
+et sont complètement différentes si score > 10. 
+On obtient pour 50 couleurs environ 9.3 ce qui est très bien
+"""
+
 import numpy as np
 import basic_colormath
 import tkinter as tk
@@ -61,13 +70,14 @@ def maximin_delta_e2000(
     
     return couleurs_choisies
 
-def evaluer(selection):
+def evaluer(selection : RGBArray):
     distances = basic_colormath.get_delta_e_matrix(selection, selection)
     np.fill_diagonal(distances, np.inf)
     return np.min(distances)
 
 def generateur_couleur(n : int):
-    candidats = generateur_rgb(10*n)
+    # On génère 10 fois plus de couleurs que nécessaires pour pouvoir maximiser la distance
+    candidats = generateur_rgb(10*n) 
     return maximin_delta_e2000(candidats, n)
 
 def show_colors(rgb_tuples):
@@ -103,8 +113,8 @@ def show_colors(rgb_tuples):
     root.mainloop()
 
 if __name__ =="__main__":
-    n = 50 # nombre de couleurs
+    n = 50 # nombre de couleurs que l'on souhaite obtenir
     liste_couleur = generateur_couleur(n)
-    print(liste_couleur)
-    print(evaluer(liste_couleur))
+    print(f"La liste des couleurs en RGB est :\n {liste_couleur}")
+    print(f"La distance minimale parmi cette liste est : {evaluer(liste_couleur)}")
     show_colors(list(liste_couleur))

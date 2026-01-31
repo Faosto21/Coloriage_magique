@@ -99,9 +99,6 @@ class DiagrammeGant(tk.Frame):
         self.partition = Noeud.partition(
             self.liste_noeuds, critere=self.critere_var.get()
         )
-        self.voisins = Noeud.voisins_noeud(
-            self.liste_noeuds, max_machine_gap, max_time_gap
-        )
         self.map_machines = map_machines
         self.algo_coloriage = algo_coloriage
 
@@ -154,19 +151,18 @@ class DiagrammeGant(tk.Frame):
 
     def scroll_both(self, *args):
         """
-        Permet de scroll à la fois le header( ligne de temps) et le canva(diagramme avec les noeuds) avec la scroll_bar horizontale.
-
-        :param self: Description
-        :param args: Description
+        Permet de scroll à la fois le header( ligne de temps) et le canva(diagramme avec les noeuds) 
+        avec la scroll_bar horizontale.
         """
         self.header.xview(*args)
         self.canvas.xview(*args)
 
-    def temps_vers_abscisse(self, date: datetime) -> float:
+    def temps_vers_abscisse(self, 
+                            date: datetime
+                            ) -> float:
         """
         Convertit une date en abscisse
 
-        :param self: Description
         :param date: Date de début ou de fin d'un Noeud
         :type date: datetime
         :return: Coordonnées dans le Canvas
@@ -178,8 +174,6 @@ class DiagrammeGant(tk.Frame):
     def dessine(self):
         """
         Dessine le diagramme de Gant en dessinant la ligne de temps au dessus puis tous les noeuds en dessous.
-
-        :param self: Description
         """
         self.min_date = min(noeud.date_debut for noeud in self.liste_noeuds)
         self.max_date = max(noeud.date_fin for noeud in self.liste_noeuds)
@@ -215,8 +209,6 @@ class DiagrammeGant(tk.Frame):
     def dessine_ligne_de_temps(self):
         """
         Dessine la barre du temps au dessus du diagramme.
-
-        :param self: Description
         """
         ## !!! A finir, echelle de temps décalé par rapport aux opérations
         self.header.delete("all")
@@ -239,8 +231,6 @@ class DiagrammeGant(tk.Frame):
     def dessine_noeud(self):
         """
         Dessine chaque Noeud du diagramme
-
-        :param self: Description
         """
         self.canvas.delete("all")
         lane_height = 80
@@ -257,15 +247,13 @@ class DiagrammeGant(tk.Frame):
                 font=("Arial", 11, "bold"),
                 fill="black",
             )
-        N = len(self.coloriage.keys())
-        rgb_tuples = list(generateur_couleur(N))
         for couleur, critere_par_couleur in self.coloriage.items():
             for critere in critere_par_couleur:
                 for noeud in self.partition[critere]:
                     x1 = self.temps_vers_abscisse(noeud.date_debut)
                     x2 = self.temps_vers_abscisse(noeud.date_fin)
 
-                    r, g, b = rgb_tuples[couleur - 1]
+                    r, g, b = couleur
                     rgb = (
                         int(r),
                         int(g),

@@ -2,7 +2,10 @@ from pathlib import Path
 import pandas as pd
 
 
-def generateur_tabulaire(chemin_data: Path, chemin_machines: Path):
+def generateur_tabulaire(
+        chemin_data: Path, 
+        chemin_machines: Path
+        ):
     data = pd.read_csv(chemin_data, dtype=str, sep=";")
     data["dtedeb"] = pd.to_datetime(data["dtedeb"])
     data["dtefin"] = pd.to_datetime(data["dtefin"])
@@ -58,6 +61,7 @@ def generateur_tabulaire(chemin_data: Path, chemin_machines: Path):
 
 
 if __name__ == "__main__":
+    print("Le résultat est dans les fichiers Planification_modifiee et Machine_modifie")
     generateur_tabulaire(
         Path("ressources/Planification.txt"), Path("ressources/Machine.txt")
     )

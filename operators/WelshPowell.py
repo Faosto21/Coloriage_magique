@@ -1,3 +1,8 @@
+"""
+Fichier contenant notre 2e algorithme testé qui n'était pas concluant car trouvait 91 couleurs alors que
+DSATUR arrivait à en trouver presque moitié moins pour colorier le graphe
+"""
+
 from operators.AlgorithmeColoriage import AlgorithmeColoriage
 from core.Noeud import Noeud
 from datetime import datetime
@@ -16,21 +21,25 @@ class WelshPowell(AlgorithmeColoriage):
     """
 
     def trouver_coloriage(
-        self, liste_noeuds: List[Noeud], critere: str
-    ) -> dict[int, set[str]]:
+        self, 
+        liste_noeuds: List[Noeud], 
+        critere: str
+        ) -> dict[int, set[str]]:
         """
-        A partir d'une partition des noeuds selon un critère, associe une couleur à chaque partie de la partition.\n
+        A partir de la liste des noeuds et d'fun critère, associe une couleur à chaque partie de la partition.\n
         Par exemple, le résultat est sous la forme : \n
-        {1:[valeur1_du_critere,valeur3_du_critere], \n
-        2:[valeur2_du_critere,valeur4_du_critere]} \n
-        Cela signifie que les parties ayant valeur1_du_critere et valeur3_du_critere seront coloriés avec la couleur 1 \n
-        Et les partie ayant valeur2_du_critere et valeur4_du_critere seront coloriés avec la couleur 2
+        {(201.1, 203, 205):[valeur1_du_critere,valeur3_du_critere], \n
+        (50.20, 209, 199):[valeur2_du_critere,valeur4_du_critere]} \n
+        Cela signifie que les parties ayant valeur1_du_critere et valeur3_du_critere seront coloriés avec la couleur RGB (201.1, 203, 205)\n
+        Et les partie ayant valeur2_du_critere et valeur4_du_critere seront coloriés avec la couleur (50.20, 209, 199)
 
 
-        :param partition: Dictionnaire dont les clés sont les différentes valeurs du critère et la valeurs l'ensemble des noeuds ayant cette valeur de critère
-        :type partition: dict[str, set[Noeud]]
+        :param liste_noeuds: Dictionnaire dont les clés sont les différentes valeurs du critère et la valeurs l'ensemble des noeuds ayant cette valeur de critère
+        :type liste_noeuds: List[Noeud]
+        :param critere: String correspondant au critere que l'on souhaite différencier sur notre coloriage
+        :type critere: str
         :return: Dictionnaire dont les clés sont le numéro de couleur et la valeur la liste des valeurs de critères qui seront coloriés de cette couleur
-        :rtype: dict[int, list[str]]
+        :rtype: dict[int, set[str]]
         """
         partition = Noeud.partition(liste_noeuds, critere=critere)  # Partition de la liste de noeud selon le critère par défaut codeof
         voisins = Noeud.voisins_noeud(liste_noeuds)  # Dictionnaire des voisins des noeuds

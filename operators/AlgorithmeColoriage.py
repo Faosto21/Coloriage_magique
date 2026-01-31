@@ -14,21 +14,25 @@ class AlgorithmeColoriage(ABC):
 
     @abstractmethod
     def trouver_coloriage(
-        self, liste_noeuds : List[Noeud], critere: str
-    ) -> dict[int, set[str]]:
+        self, 
+        liste_noeuds : List[Noeud], 
+        critere: str
+        ) -> dict[int, set[str]]:
         """
-        A partir d'une partition des noeuds selon un critère, associe une couleur à chaque partie de la partition.\n
+        A partir de la liste des noeuds et d'fun critère, associe une couleur à chaque partie de la partition.\n
         Par exemple, le résultat est sous la forme : \n
-        {1:[valeur1_du_critere,valeur3_du_critere], \n
-        2:[valeur2_du_critere,valeur4_du_critere]} \n
-        Cela signifie que les parties ayant valeur1_du_critere et valeur3_du_critere seront coloriés avec la couleur 1 \n
-        Et les partie ayant valeur2_du_critere et valeur4_du_critere seront coloriés avec la couleur 2
+        {(201.1, 203, 205):[valeur1_du_critere,valeur3_du_critere], \n
+        (50.20, 209, 199):[valeur2_du_critere,valeur4_du_critere]} \n
+        Cela signifie que les parties ayant valeur1_du_critere et valeur3_du_critere seront coloriés avec la couleur RGB (201.1, 203, 205)\n
+        Et les partie ayant valeur2_du_critere et valeur4_du_critere seront coloriés avec la couleur (50.20, 209, 199)
 
 
-        :param partition: Dictionnaire dont les clés sont les différentes valeurs du critère et la valeurs l'ensemble des noeuds ayant cette valeur de critère
-        :type partition: dict[str, set[Noeud]]
+        :param liste_noeuds: Dictionnaire dont les clés sont les différentes valeurs du critère et la valeurs l'ensemble des noeuds ayant cette valeur de critère
+        :type liste_noeuds: List[Noeud]
+        :param critere: String correspondant au critere que l'on souhaite différencier sur notre coloriage
+        :type critere: str
         :return: Dictionnaire dont les clés sont le numéro de couleur et la valeur la liste des valeurs de critères qui seront coloriés de cette couleur
-        :rtype: dict[int, list[str]]
+        :rtype: dict[tuple[float, float,float], set[str]]
         """
 
 class DSATUR(AlgorithmeColoriage):
@@ -39,14 +43,9 @@ class DSATUR(AlgorithmeColoriage):
             self,
             liste_noeuds : List[Noeud],
             critere : str
-            ) -> dict[int, set[str]]:
-        """
-        :param partition: dico avec en clé la valeur du critere et la liste des noeuds ayant ce critere en valeurs
-        :param voisins: dico avec chaque noeud en clé et l'ensemble des voisins du noeud en valuer
-        :return: renvoie un dico avec la couleur en clé et la liste des criteres à colorier avec cette couleur.
-        """
+            ) -> dict[tuple[float, float,float], set[str]]:
+        
         # Initialisation
-        start = time.time()
         partition = Noeud.partition(liste_noeuds, critere=critere)  # Partition de la liste de noeud selon le critère par défaut codeof
         voisins = Noeud.voisins_noeud(liste_noeuds)  # Dictionnaire des voisins des noeuds
         coloriage = {} # objet qui sera retourné à la fin, il donnera pour chaque couleur ses criteres
@@ -73,17 +72,6 @@ class DSATUR(AlgorithmeColoriage):
         # Couleurs adjacentes par critere, permettra de mettre à jour le dsat des voisins du critere colorié
         # Si un critere a une couleur adjacente alors il n'a pas le droit de l'avoir
         couleurs_adjacentes = {critere: set() for critere in partition.keys()} 
-
-        # Initialisation pour optimisation des distances
-        # On choisit un voisinage plus petit pour la distance entre couleurs
-        voisins_directs = Noeud.voisins_noeud(liste_noeuds, max_machine_gap=2, max_time_gap=timedelta(days=4))
-        voisins_directs_partition = {}
-        for critere, noeuds in partition.items():
-            voisins_critere = set()
-            for noeud in noeuds:
-                voisins_critere.update(voisins_directs[noeud])
-            voisins_directs_partition[critere] = voisins_critere
-        couleurs_adjacentes_directs = {critere: set() for critere in partition.keys()}
 
         while non_colorie:
             # Sélection du nœud avec DSAT max (degré max en cas d'égalité)
@@ -119,9 +107,6 @@ class DSATUR(AlgorithmeColoriage):
 
                     # On ajoute la couleur aux couleurs_adjacentes du critere_du_voisin
                     couleurs_adjacentes[critere_du_voisin].add(couleur)
-
-                    if voisin_du_critere in voisins_directs_partition[critere_choisi]:
-                        couleurs_adjacentes_directs[critere_du_voisin].add(couleur)
                     
                     # On met à jour le dsat du voisin du critère
                     dsat[voisin_du_critere] = len(couleurs_adjacentes[critere_du_voisin])
@@ -129,42 +114,23 @@ class DSATUR(AlgorithmeColoriage):
             # On retire tous les noeuds de ce critère de non_colorie
             non_colorie.difference_update(partition[critere_choisi])
 
-        # On va maintenant chercher les couleurs pour optimiser le coloriage
-        # On créé un dictionnaire pour regarder la différence de couleur avec ses couleurs
-        # voisins pour chaque couleur dans le coloriage
-
-        # On commence par générer le nombre de couleurs nécessaires et les mapper pour faire des
-        # opérations sur ces valeurs en coicidant les clés de coloriage et celles ci
+        # On va maintenant attribuer les couleurs générées à chaque clé de notre coloriage
         liste_couleurs = generateur_couleur(len(coloriage))
-        print(f"La distance minimale de base est \n{evaluer(liste_couleurs)}")
-        mapping_couleurs = dict(enumerate(liste_couleurs))
-        distance_min_couleurs = {}
+        dico_couleurs = dict(enumerate(liste_couleurs))
 
-        for col, liste_critere in coloriage.items():
-            for critere in liste_critere:
-                couleurs_voisines = couleurs_adjacentes_directs[critere]
-                min_couleur = 100
+        # On transforme les np.array en tuple pour qu'ils soient hashables et les mettre en clé
+        dico_couleurs_tuple = {key : tuple(arr) for key, arr in dico_couleurs.items()}
 
-                # On regarde la différence de couleur entre la couleur cible et ses couleurs voisines
-                for couleur_voisine in couleurs_voisines:
-                    if couleur_voisine != col:
-                        min_nouvelle_couleur = basic_colormath.get_delta_e(
-                            mapping_couleurs[col], 
-                            mapping_couleurs[couleur_voisine]
-                            )
+        # On obtient le dictionnaire avec clé = couleur RGB et valeur = ensemble des noeuds de cette couleur
+        coloriage_final = {couleur_rgb : coloriage[numero] for numero, couleur_rgb in dico_couleurs_tuple.items()}
 
-                        # Si la nouvelle couleur est plus proche qu'avant on la remplace
-                        if min_nouvelle_couleur < min_couleur:
-                            min_couleur = min_nouvelle_couleur
-                            distance_min_couleurs[col] = min_nouvelle_couleur
-        end = time.time()
-        print(f"Durée = {end-start}")
-        print(f"La plus petite distance selon le delta e 2000 entre tous les voisins direct est :\n{np.min(list(distance_min_couleurs.values()))}")
-        print(f"La moyenne des distances selon le delta e 2000 entre tous les voisins direct est :\n{np.average(list(distance_min_couleurs.values()))}")
-        return coloriage
+        return coloriage_final
 
 
-def ecritureFichierColoriage(coloriage, chemin_donnees, choix_critere):
+def ecritureFichierColoriage(coloriage : dict[tuple[float, float, float] : set[str]], 
+                             chemin_donnees : str, 
+                             choix_critere : str
+                             ):
     """
     :param coloriage: un dico avec la couleur en clé et la liste des criteres à colorier avec cette couleur.
     :param choix_critere: une string correspondant au critère selectionné
