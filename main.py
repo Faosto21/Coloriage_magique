@@ -1,11 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import tkinter as tk
-import pandas as pd
 from pathlib import Path
+import pandas as pd
+
 from core.Noeud import Noeud
 from core.DiagrammeGant import DiagrammeGant
-from operators.AlgorithmeColoriage import DSATUR
-from operators.WelshPowell import WelshPowell
 from operators.GenerateurTabulaire import generateur_tabulaire
 
 if __name__ == "__main__":
@@ -34,11 +33,8 @@ if __name__ == "__main__":
     # Initialisation des objets
     root = tk.Tk()
     root.title("Diagramme de Gant")
-    algo = DSATUR()
-    diagramme = DiagrammeGant(
-        root, liste_noeuds, mapping_machines, algo, max_time_gap=timedelta(days=7)
-    )
+    diagramme = DiagrammeGant(root, liste_noeuds, mapping_machines)
     diagramme.pack(fill="both", expand=True)
 
-    # Lancement du script
+    # Ouverture de la fenêtre
     root.mainloop()

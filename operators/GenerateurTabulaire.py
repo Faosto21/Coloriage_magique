@@ -2,10 +2,16 @@ from pathlib import Path
 import pandas as pd
 
 
-def generateur_tabulaire(
-        chemin_data: Path, 
-        chemin_machines: Path
-        ):
+def generateur_tabulaire(chemin_data: Path, chemin_machines: Path):
+    """
+    Fonction qui modifie les fichiers Planification.txt et Machine.txt pour créer de nouvelles machines en cas de chevauchement d'opérations sur la même machine.
+    Il écrit ces modifications dans de nouveaux fichiers Planification_modifiee.txt et Machine_modifie.txt.
+
+    :param chemin_data: Chemin vers le fichier Planification.txt
+    :type chemin_data: Path
+    :param chemin_machines: Chemin vers le fichier Machine.txt
+    :type chemin_machines: Path
+    """
     data = pd.read_csv(chemin_data, dtype=str, sep=";")
     data["dtedeb"] = pd.to_datetime(data["dtedeb"])
     data["dtefin"] = pd.to_datetime(data["dtefin"])
@@ -14,7 +20,10 @@ def generateur_tabulaire(
     new_machine_path = chemin_machines.parent / "Machine_modifie.txt"
 
     for machine, operations in data.groupby("centre"):
-        ops = operations.sort_values("dtedeb")
+
+        ops = operations.sort_values(
+            "dtedeb"
+        )  # On trie les opérations par date de début pour faciliter la détection de chevauchements
         groups = {}  # idx : liste des indices des opérations
         # On bosse avec les indices pour simplifier les accès et écriture avec Pandas
         for idx, ope in ops.iterrows():
