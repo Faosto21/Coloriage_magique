@@ -19,14 +19,33 @@ RGBArray = Annotated[
 ]
 
 def generateur_rgb(
-        n: int
+        n: int,
+        range_saturation : tuple[float, float] = (20,80), # Saturation pour pastel
+        range_lightness : tuple[float, float] = (50,75) # Luminosité moyenne pour éviter blanc/noir
         ) -> RGBArray:
-    """Génère n couleurs RGB"""
+    """
+    Fonction pour générer n couleurs en format RGB. On génère en premier les couleurs sous
+    format HSL car permet de générer plus uniformément que dans l'espace RGB. On pourrait
+    également utiliser l'espace LAB spécialement conçu pour, mais cet espace donne des résultats très satisfaisant
+    et est plus simple à comprendre.
+
+    Args:
+        n (int): nombre de couleurs que l'on souhaite générer
+        range_saturation (tuple[float, float]): le min et le max de la saturation que l'on souhaite dans l'espace HSL
+        range_lightness (tuple[float, float]): le min et le max de la lightness que l'on souhaite dans l'espace HSL
+
+    Returns:
+        RGBArray: Tableau de couleurs RGB 
+    """
+    min_saturation = range_saturation[0]
+    max_saturation = range_saturation[1]
+    min_lightness = range_lightness[0]
+    max_lightness = range_lightness[1]
 
     # On génère n couleurs en HSL pour avoir des couleurs optimales
     hues = np.linspace(0, 365, n, endpoint=False) % 365 # Uniformité en teinte sur le disque
-    saturation = np.random.uniform(20, 80, n) # Saturation pour pastel
-    lightness = np.random.uniform(50, 75, n) # Luminosité moyenne pour éviter blanc/noir
+    saturation = np.random.uniform(min_saturation, max_saturation, n) 
+    lightness = np.random.uniform(min_lightness, max_lightness, n) 
     hsl_colors = np.column_stack([hues, saturation, lightness])
  
     return basic_colormath.hsls_to_rgb(hsl_colors)
@@ -35,7 +54,15 @@ def maximin_delta_e2000(
         candidats: RGBArray, 
         n: int
         ) -> RGBArray:
-    """Sélectionne n couleurs maximisant la distance Delta E 2000"""
+    """Sélectionne n couleurs maximisant la distance Delta E 2000.
+
+    Args:
+        candidats (RGBArray): "liste" de candidats pour obtenir une nouvelle "liste" ayant la plus grande distance 2 à 2.
+        n (int): nombre de couleurs que l'on souhaite obtenir
+
+    Returns:
+        RGBArray: Notre RGBArray contenant les n couleurs parmi les candidats qui maximisent la distance 2 à 2.
+    """
     
     # On choisit une première couleur aléatoire
     first_idx = np.random.randint(0, len(candidats))
@@ -70,12 +97,29 @@ def maximin_delta_e2000(
     
     return couleurs_choisies
 
-def evaluer(selection : RGBArray):
+def evaluer(selection : RGBArray) -> float:
+    """Fonction pour évaluer notre choix de couleurs
+
+    Args:
+        selection (RGBArray): Liste de couleurs que l'on souhaite évaluer
+
+    Returns:
+        float: retourne la distance minimale entre toutes nos couleurs
+    """
     distances = basic_colormath.get_delta_e_matrix(selection, selection)
     np.fill_diagonal(distances, np.inf)
     return np.min(distances)
 
 def generateur_couleur(n : int):
+    """Fonction qui permet de générer n couleurs, l'idée est de trouver le nombre chromatique 
+    et ensuite d'appeler cette fonction.
+
+    Args:
+        n (int): nombre de couleurs que l'on souhaite
+
+    Returns:
+        _type_: _description_
+    """
     # On génère 10 fois plus de couleurs que nécessaires pour pouvoir maximiser la distance
     candidats = generateur_rgb(10*n) 
     return maximin_delta_e2000(candidats, n)
@@ -113,7 +157,7 @@ def show_colors(rgb_tuples):
     root.mainloop()
 
 if __name__ =="__main__":
-    n = 50 # nombre de couleurs que l'on souhaite obtenir
+    n = 100 # nombre de couleurs que l'on souhaite obtenir
     liste_couleur = generateur_couleur(n)
     print(f"La liste des couleurs en RGB est :\n {liste_couleur}")
     print(f"La distance minimale parmi cette liste est : {evaluer(liste_couleur)}")

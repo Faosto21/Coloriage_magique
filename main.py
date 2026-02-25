@@ -7,14 +7,22 @@ from core.DiagrammeGant import DiagrammeGant
 from operators.AlgorithmeColoriage import DSATUR
 from operators.WelshPowell import WelshPowell
 from operators.GenerateurTabulaire import generateur_tabulaire
+import os 
 
 if __name__ == "__main__":
+    # Chemin vers dossier parent
+    chemin_dossier = Path(os.path.dirname(__file__))
+    chemin_planification = Path(os.path.join(chemin_dossier, "ressources/Planification.txt"))
+    chemin_machine = Path(os.path.join(chemin_dossier, "ressources/Machine.txt"))
+    chemin_planification_modifiee = os.path.join(chemin_dossier, "ressources/Planification_modifiee.txt")
+    chemin_machine_modifiee = os.path.join(chemin_dossier, "ressources/Machine_modifiee.txt")
+
     # Initialisation des données
     generateur_tabulaire(
-        Path("ressources/Planification.txt"), Path("ressources/Machine.txt")
+        chemin_planification
     )  # On modifie Planning et Machine en cherchant les chevauchements
-    data = pd.read_csv("ressources/Planification_modifiee.txt", dtype=str, sep=";")
-    machines = pd.read_csv("ressources/Machine_modifie.txt")
+    data = pd.read_csv(chemin_planification_modifiee, dtype=str, sep=";")
+    machines = pd.read_csv(chemin_machine_modifiee)
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
     liste_noeuds = [
         Noeud(

@@ -88,7 +88,7 @@ class DSATUR(AlgorithmeColoriage):
 
             # On choisit une couleur aléatoire pour le critere parmi les possibles
             if couleurs_possibles:
-                couleur = np.random.choice(list(couleurs_possibles)) # Conversion en liste pour random
+                couleur = tuple(couleurs_possibles)[0] # Conversion en liste pour random
             # Sinon on prend la couleur suivante du coloriage
             else:
                 couleur = len(coloriage)
@@ -113,7 +113,6 @@ class DSATUR(AlgorithmeColoriage):
 
             # On retire tous les noeuds de ce critère de non_colorie
             non_colorie.difference_update(partition[critere_choisi])
-
         # On va maintenant attribuer les couleurs générées à chaque clé de notre coloriage
         liste_couleurs = generateur_couleur(len(coloriage))
         dico_couleurs = dict(enumerate(liste_couleurs))
@@ -176,9 +175,9 @@ if __name__=="__main__":
     from datetime import datetime, timedelta
     import pandas as pd
     from core.Noeud import Noeud
-
-    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
-    machines = pd.read_csv("ressources/Machine.txt")
+    import time
+    data = pd.read_csv("ressources/Planification_modifiee.txt", dtype=str, sep=";")
+    machines = pd.read_csv("ressources/Machine_modifiee.txt")
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
     liste_noeuds = [
         Noeud(
@@ -202,6 +201,9 @@ if __name__=="__main__":
 
     # Test de DSATUR
     algo_dsat = DSATUR()
+    start = time.time()
     coloriage = algo_dsat.trouver_coloriage(liste_noeuds=liste_noeuds, critere="codof")
-    print(f"Le coloriage est : {coloriage}")
+    end = time.time()
+    print(f"L'algorithme a mis {end - start}seconds")
+    print(f"Le nombre chromatique est {len(coloriage)}")
     ecritureFichierColoriage(coloriage, "ressources/Planification.txt", "codof")

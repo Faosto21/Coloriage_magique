@@ -1,17 +1,23 @@
 from pathlib import Path
 import pandas as pd
-
+import os
 
 def generateur_tabulaire(
-        chemin_data: Path, 
-        chemin_machines: Path
+        chemin_data: Path
         ):
+    """Fonction permettant de gérer les chevauchement sur une meme machine (si 2 op ont lieu en même temps)
+    et créé un nouvelle "sous-machine" e.g MAC101_1.
+    Génère un fichier Planification_modifiee.txt et Machine_modifiee.txt dans le MEME dossier que le fichier donné en argument
+
+    Args:
+        chemin_data (Path): Chemin vers le fichier Planification.txt
+    """
     data = pd.read_csv(chemin_data, dtype=str, sep=";")
     data["dtedeb"] = pd.to_datetime(data["dtedeb"])
     data["dtefin"] = pd.to_datetime(data["dtefin"])
-    machines = pd.read_csv(chemin_machines, sep=";")
-    new_data_path = chemin_data.parent / "Planification_modifiee.txt"
-    new_machine_path = chemin_machines.parent / "Machine_modifie.txt"
+    machines = pd.DataFrame({"centre": sorted(data["centre"].unique())})
+    new_data_path = os.path.join(chemin_data.parent, "Planification_modifiee.txt")
+    new_machine_path = os.path.join(chemin_data.parent, "Machine_modifiee.txt")
 
     for machine, operations in data.groupby("centre"):
         ops = operations.sort_values("dtedeb")
@@ -59,9 +65,9 @@ def generateur_tabulaire(
     data.to_csv(new_data_path, index=False, sep=";")
     machines.to_csv(new_machine_path, index=False)
 
-
 if __name__ == "__main__":
-    print("Le résultat est dans les fichiers Planification_modifiee et Machine_modifie")
-    generateur_tabulaire(
-        Path("ressources/Planification.txt"), Path("ressources/Machine.txt")
-    )
+    from pathlib import Path
+
+    # Chemin vers le fichier de planification
+    fichier_planif = Path("ressources/Planification.txt")
+    generateur_tabulaire(fichier_planif)
