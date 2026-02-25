@@ -4,23 +4,22 @@ import pandas as pd
 from pathlib import Path
 from core.Noeud import Noeud
 from core.DiagrammeGant import DiagrammeGant
-from operators.coloriage.AlgorithmeColoriage import DSATUR
-from operators.coloriage.WelshPowell import WelshPowell
 from operators.GenerateurTabulaire import generateur_tabulaire
 import os 
 
 if __name__ == "__main__":
     # Chemin vers dossier parent
     chemin_dossier = Path(os.path.dirname(__file__))
-    chemin_planification = Path(os.path.join(chemin_dossier, "ressources/Planification.txt"))
-    chemin_machine = Path(os.path.join(chemin_dossier, "ressources/Machine.txt"))
-    chemin_planification_modifiee = os.path.join(chemin_dossier, "ressources/Planification_modifiee.txt")
-    chemin_machine_modifiee = os.path.join(chemin_dossier, "ressources/Machine_modifiee.txt")
+    chemin_planification = Path(os.path.join(chemin_dossier, "ressources", "Planification.txt"))
+    chemin_machine = Path(os.path.join(chemin_dossier, "ressources", "Machine.txt"))
+    chemin_planification_modifiee = os.path.join(chemin_dossier, "ressources" ,"Planification_modifiee.txt")
+    chemin_machine_modifiee = os.path.join(chemin_dossier, "ressources" ,"Machine_modifiee.txt")
 
     # Initialisation des données
     generateur_tabulaire(
         chemin_planification
-    )  # On modifie Planning et Machine en cherchant les chevauchements
+    )
+
     data = pd.read_csv(chemin_planification_modifiee, dtype=str, sep=";")
     machines = pd.read_csv(chemin_machine_modifiee)
     mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
@@ -42,9 +41,8 @@ if __name__ == "__main__":
     # Initialisation des objets
     root = tk.Tk()
     root.title("Diagramme de Gant")
-    algo = DSATUR()
     diagramme = DiagrammeGant(
-        root, liste_noeuds, mapping_machines, algo, max_time_gap=timedelta(days=7)
+        root, liste_noeuds=liste_noeuds, map_machines=mapping_machines, max_time_gap=timedelta(days=7)
     )
     diagramme.pack(fill="both", expand=True)
 

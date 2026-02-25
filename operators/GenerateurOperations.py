@@ -1,9 +1,12 @@
+from pathlib import Path
+import os
+
 def generer_planification(
     nb_lignes: int,
     nb_centres: int = 30,
     nb_produits: int = 30,
     duree_max_jours: int = 180,  # 6 mois par défaut
-    fichier_sortie: str = "Planification.txt"
+    chemin_sortie: str = "/ressources/Planification.txt"
 ):
     """
     Version avec paramètres ajustables
@@ -59,7 +62,7 @@ def generer_planification(
     # Date de départ (aujourd'hui - 1 mois pour avoir du passé et du futur)
     date_debut = datetime.now() - timedelta(days=30)
     
-    with open(fichier_sortie, 'w', newline='', encoding='utf-8') as f:
+    with open(chemin_sortie, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f, delimiter=';')
         writer.writerow(['centre', 'codprod', 'codof', 'sequence', 'codop', 'dtedeb', 'dtefin'])
         
@@ -104,10 +107,12 @@ def generer_planification(
 # Utilisation
 if __name__ == "__main__":
     # 50 000 ope
+    chemin_dossier = Path(os.path.dirname(__file__)).parent
+    chemin_sortie = os.path.join(chemin_dossier, "ressources", "Planification.txt")
     generer_planification(
-        nb_lignes=50000,
+        nb_lignes=10000,
         nb_centres=40,
         nb_produits=40,
         duree_max_jours=365,  # 1 an max
-        fichier_sortie="Planification.txt"
+        chemin_sortie=chemin_sortie
     )
