@@ -41,12 +41,13 @@ class Noeud:
     date_fin: datetime
 
     criteres_partition = ("codop", "codof", "codprod", "centre", "sequence")
-    
+
     def est_voisin(
         self, other: Noeud, max_machine_gap=3, max_time_gap=timedelta(days=21)
     ) -> bool:
         """
-        Vérifie si deux noeuds sont voisins l'un de l'autre
+        Vérifie si deux noeuds sont voisins l'un de l'autre selon deux dimensions : la machine et le temps.
+        Deux noeuds sont considérés voisins s'ils sont sur des machines proches (écart d'indice dans la liste de machines inférieur à max_machine_gap) et s'ils se chevauchent dans le temps ou sont suffisamment proches dans le temps (écart entre la fin du plus tôt et le début du plus tard inférieur à max_time_gap).
 
         :param self: 1er sommet
         :param other: 2ème sommet dont on veut vérifier s'il est voisin avec self.
@@ -96,7 +97,7 @@ class Noeud:
     @staticmethod
     def partition(
         liste_noeuds: list[Noeud], critere: str = "codop"
-    ) -> dict[any, set[Noeud]]:
+    ) -> dict[str, set[Noeud]]:
         """
         Renvoie la partition de la liste des noeuds en fonction d'un critère choisi
 

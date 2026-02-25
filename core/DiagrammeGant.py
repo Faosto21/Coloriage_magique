@@ -1,14 +1,17 @@
 from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import ttk
-import pandas as pd
-import time
 from pathlib import Path
+import pandas as pd
 
-from operators.GenerateurCouleur import generateur_couleur
+
 from core.Noeud import Noeud
-from operators.AlgorithmeColoriage import AlgorithmeColoriage, ecritureFichierColoriage
-from operators.AlgorithmeColoriage import DSATUR
+from operators.coloriage.AlgorithmeColoriage import (
+    AlgorithmeColoriage,
+    ecritureFichierColoriage,
+)
+from operators.coloriage.DSATUR import DSATUR
+from operators.coloriage.WelshPowell import WelshPowell
 from operators.GenerateurTabulaire import generateur_tabulaire
 
 
@@ -18,11 +21,25 @@ class CanvasTooltip:
     """
 
     def __init__(self, canvas, text):
+        """
+            Constructeur de la classe CanvasTooltip.
+
+        :param canvas: Canvas sur lequel le tooltip doit être affiché
+        :type canvas: tk.Canvas
+        :param text: Texte à afficher dans le tooltip
+        :type text: str
+        """
         self.canvas = canvas
         self.text = text
         self.tip = None
 
     def show(self, x, y):
+        """
+        Fait apparaître une petite fenêtre avec les informations du noeud
+        quand on hover sur la case du diagramme de Gant.
+        :param x: Position x du curseur
+        :param y: Position y du curseur
+        """
         if self.tip:
             return
         self.tip = tk.Toplevel(self.canvas)
@@ -44,6 +61,9 @@ class CanvasTooltip:
         self.tip.wm_geometry(f"+{x+15}+{y+15}")
 
     def hide(self):
+        """
+        Fait disparaître la fenêtre d'information quand on quitte la case du diagramme de Gant.
+        """
         if self.tip:
             self.tip.destroy()
         self.tip = None
@@ -54,8 +74,7 @@ class DiagrammeGant(tk.Frame):
     Classe permettant de visualiser le diagramme de Gant tout en trouvant un coloriage.
     Atttributs :
         -listes_noeuds (list[Noeud]) : La liste de tous les noeuds (opérations) qui vont être affichés dans le diagramme.
-        -map_machines (dict[str,int]) : Dictionnaire qui associe chaque centre à son indice dans Machine.txt et donc sa ligne dans le diagramme.
-        -algo_coloriage (AlgorithmeColoriage) : Algorithme de coloriage utilisé pour trouver le nombre de couleurs différentes utilisés dans le diagramme.
+        -map_machines (dict[str,int]) : Dictionnaire qui associe chaque centre à son indice dans Machine.txt et donc sa ligne dans le diagramme
         -max_machine_gap (int) : Ecart maximum en indice de centre pour être considéré voisins.
         -max_time_gap (timedelta) : Ecart maximum de temps pour être considéré voisins.
 
@@ -66,11 +85,13 @@ class DiagrammeGant(tk.Frame):
         fenetre,
         liste_noeuds: list[Noeud],
         map_machines: dict[str, int],
-        algo_coloriage: AlgorithmeColoriage,
-        max_machine_gap: int = 8,
+        max_machine_gap: int = 7,
         max_time_gap: timedelta = timedelta(days=7),
     ):
         super().__init__(fenetre)
+
+        self.max_machine_gap = max_machine_gap
+        self.max_time_gap = max_time_gap
 
         # Barre de contrôle (au-dessus du header)
         self.controls = tk.Frame(self)
@@ -89,18 +110,29 @@ class DiagrammeGant(tk.Frame):
         )
         self.critere_box.pack(side="left", padx=5)
 
+        tk.Label(self.controls, text="Algorithme :", font=("Arial", 10)).pack(
+            side="left"
+        )
+
+        #  Sélection de l'algorithme de coloriage dans une combobox (par défaut DSATUR)
+        self.algo_var = tk.StringVar(value="DSATUR")
+        self.algo_box = ttk.Combobox(
+            self.controls,
+            textvariable=self.algo_var,
+            values=["DSATUR", "WelshPowell"],
+            state="readonly",
+            width=12,
+        )
+        self.algo_box.pack(side="left", padx=5)
+
         self.valider_btn = ttk.Button(
             self.controls, text="Valider", command=self.on_change_critere
         )
         self.valider_btn.pack(side="left", padx=5)
 
         self.liste_noeuds = liste_noeuds
-        # Partition initiale selon le critère sélectionné
-        self.partition = Noeud.partition(
-            self.liste_noeuds, critere=self.critere_var.get()
-        )
+
         self.map_machines = map_machines
-        self.algo_coloriage = algo_coloriage
 
         self.pixels_per_hour = 5
 
@@ -124,10 +156,23 @@ class DiagrammeGant(tk.Frame):
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        self.coloriage = self.algo_coloriage.trouver_coloriage(
-            self.liste_noeuds, self.critere_var.get()
+        self.partition = Noeud.partition(
+            self.liste_noeuds, critere=self.critere_var.get()
         )
+        self.coloriage = self.get_algo_instance().trouver_coloriage(
+            self.liste_noeuds,
+            self.max_machine_gap,
+            self.max_time_gap,
+            self.critere_var.get(),
+        )
+        print(f"Nombre de couleurs utilisées : {len(self.coloriage)}")
         self.dessine()
+        # On écrit le résultat du coloriage dans un fichier texte
+        ecritureFichierColoriage(
+            self.coloriage,
+            "ressources/Planification_modifiee.txt",
+            self.critere_var.get(),
+        )
 
         # Ajustement des scroll_region pour éviter le décalage entre la time line et les opérations
         main_bbox = self.canvas.bbox("all")
@@ -137,9 +182,22 @@ class DiagrammeGant(tk.Frame):
 
         self.bind_mousewheel()
 
+    # Focntions pour gérer le scroll avec la molette de la souris
     def bind_mousewheel(self):
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_vertical)
         self.canvas.bind_all("<Shift-MouseWheel>", self._on_mousewheel_horizontal)
+
+    def get_algo_instance(self) -> AlgorithmeColoriage:
+        """
+        Retourne une instance de l'algorithme sélectionné dans la combobox.
+        Il sera utilisé pour trouver le coloriage du diagramme de Gant.
+        """
+        name = self.algo_var.get()
+        if name == "WelshPowell":
+            return WelshPowell()
+        if name == "DSATUR":
+            return DSATUR()
+        raise ValueError(f"Algorithme inconnu : {name}")
 
     def _on_mousewheel_vertical(self, event):
         if event.delta:
@@ -151,15 +209,13 @@ class DiagrammeGant(tk.Frame):
 
     def scroll_both(self, *args):
         """
-        Permet de scroll à la fois le header( ligne de temps) et le canva(diagramme avec les noeuds) 
+        Permet de scroll à la fois le header( ligne de temps) et le canva(diagramme avec les noeuds)
         avec la scroll_bar horizontale.
         """
         self.header.xview(*args)
         self.canvas.xview(*args)
 
-    def temps_vers_abscisse(self, 
-                            date: datetime
-                            ) -> float:
+    def temps_vers_abscisse(self, date: datetime) -> float:
         """
         Convertit une date en abscisse
 
@@ -189,9 +245,10 @@ class DiagrammeGant(tk.Frame):
 
         # self.voisins ne dépend pas du critère (voisinage entre noeuds)
         # On passe la liste de noeuds et la valeur du critère à l'algorithme
-        self.coloriage = self.algo_coloriage.trouver_coloriage(
-            self.liste_noeuds, critere
+        self.coloriage = self.get_algo_instance().trouver_coloriage(
+            self.liste_noeuds, self.max_machine_gap, self.max_time_gap, critere
         )
+        print(f"Nombre de couleurs utilisées : {len(self.coloriage)}")
         # On écrit le résultat du coloriage dans un fichier texte
         ecritureFichierColoriage(
             self.coloriage, "ressources/Planification_modifiee.txt", critere
@@ -210,7 +267,6 @@ class DiagrammeGant(tk.Frame):
         """
         Dessine la barre du temps au dessus du diagramme.
         """
-        ## !!! A finir, echelle de temps décalé par rapport aux opérations
         self.header.delete("all")
         start = datetime(self.min_date.year, self.min_date.month, self.min_date.day)
         date = start
@@ -230,7 +286,7 @@ class DiagrammeGant(tk.Frame):
 
     def dessine_noeud(self):
         """
-        Dessine chaque Noeud du diagramme
+        Dessine chaque Noeud du diagramme avec sa couleur associée par le coloriage trouvé par l'algorithme.
         """
         self.canvas.delete("all")
         lane_height = 80
@@ -342,10 +398,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.title("Diagramme de Gant")
-    algo = DSATUR()
-    diagramme = DiagrammeGant(
-        root, liste_noeuds, mapping_machines, algo, max_time_gap=timedelta(days=7)
-    )
+    diagramme = DiagrammeGant(root, liste_noeuds, mapping_machines)
     diagramme.pack(fill="both", expand=True)
 
     root.mainloop()
