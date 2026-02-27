@@ -3,3 +3,6 @@ operators/coloriage/_pycache__/
 __pycache__/
 .venv/
 venv/
+build/
+dist/
+*.spec

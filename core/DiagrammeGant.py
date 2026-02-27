@@ -85,6 +85,8 @@ class DiagrammeGant(tk.Frame):
         fenetre,
         liste_noeuds: list[Noeud],
         map_machines: dict[str, int],
+        chemin_entree: str,
+        chemin_sortie: str,
         max_machine_gap: int = 7,
         max_time_gap: timedelta = timedelta(days=7),
     ):
@@ -92,6 +94,8 @@ class DiagrammeGant(tk.Frame):
 
         self.max_machine_gap = max_machine_gap
         self.max_time_gap = max_time_gap
+        self.chemin_entree = chemin_entree
+        self.chemin_sortie = chemin_sortie
 
         # Barre de contrôle (au-dessus du header)
         self.controls = tk.Frame(self)
@@ -170,7 +174,8 @@ class DiagrammeGant(tk.Frame):
         # On écrit le résultat du coloriage dans un fichier texte
         ecritureFichierColoriage(
             self.coloriage,
-            "ressources/Planification_modifiee.txt",
+            self.chemin_entree,
+            self.chemin_sortie,
             self.critere_var.get(),
         )
 
@@ -397,7 +402,7 @@ if __name__ == "__main__":
     # print(len(partition))  # 108 valeurs différentes de codeof
 
     root = tk.Tk()
-    root.title("Diagramme de Gant")
+    root.title("Diagramme de GantT")
     diagramme = DiagrammeGant(root, liste_noeuds, mapping_machines)
     diagramme.pack(fill="both", expand=True)
 

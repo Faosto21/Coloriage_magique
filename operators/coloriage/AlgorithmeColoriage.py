@@ -38,7 +38,8 @@ class AlgorithmeColoriage(ABC):
 
 def ecritureFichierColoriage(
     coloriage: dict[tuple[float, float, float], set[str]],
-    chemin_donnees: str,
+    chemin_entree: str,
+    chemin_sortie: str,
     choix_critere: str,
 ):
     """
@@ -57,8 +58,8 @@ def ecritureFichierColoriage(
 
     # Lecture et ecriture du fichier
 
-    with open(chemin_donnees, "r", encoding="utf-8") as f_in, open(
-        "ressources/Resultats_planification.txt", "w", encoding="utf-8"
+    with open(chemin_entree, "r", encoding="utf-8") as f_in, open(
+        chemin_sortie, "w", encoding="utf-8"
     ) as f_out:
 
         # Header du fichier
@@ -79,7 +80,9 @@ def ecritureFichierColoriage(
 
             # colonne critrere = index
             critere = cols[index] if len(cols) > index else ""
-            couleur = list(map(float,couleur_par_critere.get(str(critere), ""))) # vide si pas trouve
+            couleur = list(
+                map(float, couleur_par_critere.get(str(critere), ""))
+            )  # vide si pas trouve
 
             f_out.write(line + ";" + str(couleur) + "\n")
 
