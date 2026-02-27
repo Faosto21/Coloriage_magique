@@ -79,7 +79,7 @@ def ecritureFichierColoriage(
 
             # colonne critrere = index
             critere = cols[index] if len(cols) > index else ""
-            couleur = couleur_par_critere.get(str(critere), "")  # vide si pas trouve
+            couleur = list(map(float,couleur_par_critere.get(str(critere), ""))) # vide si pas trouve
 
             f_out.write(line + ";" + str(couleur) + "\n")
 
