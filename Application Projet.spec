@@ -31,7 +31,6 @@ a = Analysis(
         (r'C:\Users\thoma\miniforge3\Library\bin\tk86t.dll','.'),
         (r'C:\Users\thoma\miniforge3\Library\bin\ffi-8.dll','.'),
         (r'C:\Users\thoma\miniforge3\Library\bin\libbz2.dll','.'),
-        (r'C:\Users\thoma\miniforge3\Library\bin\sqlite3.dll','.'),
         (r'C:\Users\thoma\miniforge3\pkgs\tbb-2021.13.0-h62715c5_1\Library\bin\tbb12.dll','.')
         ],
     datas=datas,

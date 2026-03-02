@@ -2,7 +2,10 @@ from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
+from tkinter import filedialog
 import pandas as pd
+import json
+import shutil
 
 
 from core.Noeud import Noeud
@@ -13,6 +16,60 @@ from operators.coloriage.AlgorithmeColoriage import (
 from operators.coloriage.DSATUR import DSATUR
 from operators.coloriage.WelshPowell import WelshPowell
 from operators.GenerateurTabulaire import generateur_tabulaire
+from operators.GenerateurOperations import fenetre_generer_planification
+
+
+def fenetre_chemin(parent, fichier_chemin, on_validate):
+    """
+    Fonction qui ouvre un explorateur de fichier pour sélectionner le fichier de planification et sauvegarde le chemin de ce fichier dans fichier_chemin.
+    Et en appuyant sur le bouton valider, on appelle la fonction on_validate qui va mettre à jour le diagramme de Gant avec les données du nouveau fichier de planification.
+    """
+
+    def browseFiles():
+        filename = tk.filedialog.askopenfilename(
+            initialdir="/",
+            title="Choisir un fichier de données",
+            filetypes=(("Text files", "*.txt*"), ("all files", "*.*")),
+        )
+        with open(fichier_chemin, "r", encoding="utf-8") as f:
+            path = json.load(f)
+        if not filename:
+            return
+        path["planification"] = filename
+        planif_path.set(filename)
+        with open(fichier_chemin, "w", encoding="utf-8") as f:
+            json.dump(path, f, indent=4)
+
+    if on_validate is None:
+
+        def on_validate():
+            pass
+
+    def valider():
+        on_validate()
+        fenetre.destroy()
+
+    fenetre = tk.Toplevel(parent)
+    fenetre.geometry("600x200")
+    fenetre.resizable(False, False)
+    fenetre.title("Sélection des fichiers de données")
+
+    planif_path = tk.StringVar(value="Pas de fichier sélectionné")
+    tk.Label(fenetre, text="Fichier de planification :").grid(row=0, column=0)
+    tk.Button(fenetre, text="Parcourir", command=browseFiles).grid(row=0, column=1)
+    tk.Button(fenetre, text="Valider", command=valider).grid(
+        row=1, column=0, columnspan=2
+    )
+    tk.Label(
+        fenetre,
+        textvariable=planif_path,
+        wraplength=350,
+        anchor="w",
+        justify="left",
+    ).grid(row=0, column=2)
+    fenetre.transient(parent)
+    fenetre.grab_set()
+    parent.wait_window(fenetre)
 
 
 class CanvasTooltip:
@@ -69,7 +126,7 @@ class CanvasTooltip:
         self.tip = None
 
 
-class DiagrammeGant(tk.Frame):
+class DiagrammeGantt(tk.Frame):
     """
     Classe permettant de visualiser le diagramme de Gant tout en trouvant un coloriage.
     Atttributs :
@@ -85,8 +142,9 @@ class DiagrammeGant(tk.Frame):
         fenetre,
         liste_noeuds: list[Noeud],
         map_machines: dict[str, int],
-        chemin_entree: str,
-        chemin_sortie: str,
+        chemin_entree: Path,
+        chemin_path: Path,
+        chemin_sortie: Path,
         max_machine_gap: int = 7,
         max_time_gap: timedelta = timedelta(days=7),
     ):
@@ -95,6 +153,7 @@ class DiagrammeGant(tk.Frame):
         self.max_machine_gap = max_machine_gap
         self.max_time_gap = max_time_gap
         self.chemin_entree = chemin_entree
+        self.chemin_path = chemin_path
         self.chemin_sortie = chemin_sortie
 
         # Barre de contrôle (au-dessus du header)
@@ -112,7 +171,7 @@ class DiagrammeGant(tk.Frame):
             state="readonly",
             width=12,
         )
-        self.critere_box.pack(side="left", padx=5)
+        self.critere_box.pack(side="left", padx=3)
 
         tk.Label(self.controls, text="Algorithme :", font=("Arial", 10)).pack(
             side="left"
@@ -127,12 +186,36 @@ class DiagrammeGant(tk.Frame):
             state="readonly",
             width=12,
         )
-        self.algo_box.pack(side="left", padx=5)
+        self.algo_box.pack(side="left", padx=3)
 
         self.valider_btn = ttk.Button(
             self.controls, text="Valider", command=self.on_change_critere
         )
-        self.valider_btn.pack(side="left", padx=5)
+        self.valider_btn.pack(side="left", padx=3)
+
+        self.export_btn = ttk.Button(
+            self.controls,
+            text="Exporter le fichier coloriage",
+            command=self.exporter_fichier,
+        )
+        self.export_btn.pack(side="left", padx=3)
+
+        self.changer_chemin_btn = ttk.Button(
+            self.controls,
+            text="Changer de planification",
+            command=self.change_planification,
+        )
+        self.changer_chemin_btn.pack(side="right", padx=2)
+
+        self.nb_couleurs_label = tk.Label(self.controls, text="", font=("Arial", 8))
+        self.nb_couleurs_label.pack(side="right", padx=2)
+
+        self.generer_planif_btn = ttk.Button(
+            self.controls,
+            text="Générer \n une planification",
+            command=lambda: fenetre_generer_planification(self),
+        )
+        self.generer_planif_btn.pack(side="right", padx=2)
 
         self.liste_noeuds = liste_noeuds
 
@@ -169,7 +252,9 @@ class DiagrammeGant(tk.Frame):
             self.max_time_gap,
             self.critere_var.get(),
         )
-        print(f"Nombre de couleurs utilisées : {len(self.coloriage)}")
+        self.nb_couleurs_label.config(
+            text=f"Nombre de couleurs : {len(self.coloriage)}"
+        )
         self.dessine()
         # On écrit le résultat du coloriage dans un fichier texte
         ecritureFichierColoriage(
@@ -186,6 +271,33 @@ class DiagrammeGant(tk.Frame):
         self.header.configure(scrollregion=(xmin, 0, xmax, 40))
 
         self.bind_mousewheel()
+
+    def change_planification(self):
+        fenetre_chemin(self, self.chemin_path, self.update_planification)
+        self.update_planification()
+
+    def update_planification(self):
+        """
+        Fonction qui commence par recalculer la liste des noeuds,le mapping_machines et la partition si le fichier de planification est changée
+        """
+        with open(self.chemin_path, "r") as f:
+            path = json.load(f)
+        self.chemin_entree = path["planification"]
+        self.liste_noeuds, self.map_machines = Noeud.creation_noeuds(
+            self.chemin_entree, self.chemin_path.parent
+        )
+        critere = self.critere_var.get()
+        self.partition = Noeud.partition(self.liste_noeuds, critere=critere)
+        self.coloriage = self.get_algo_instance().trouver_coloriage(
+            self.liste_noeuds, self.max_machine_gap, self.max_time_gap, critere
+        )
+        self.nb_couleurs_label.config(
+            text=f"Nombre de couleurs : {len(self.coloriage)}"
+        )
+        ecritureFichierColoriage(
+            self.coloriage, self.chemin_entree, self.chemin_sortie, critere
+        )
+        self.dessine()
 
     # Focntions pour gérer le scroll avec la molette de la souris
     def bind_mousewheel(self):
@@ -236,6 +348,8 @@ class DiagrammeGant(tk.Frame):
         """
         Dessine le diagramme de Gant en dessinant la ligne de temps au dessus puis tous les noeuds en dessous.
         """
+        self.canvas.delete("all")
+        self.header.delete("all")
         self.min_date = min(noeud.date_debut for noeud in self.liste_noeuds)
         self.max_date = max(noeud.date_fin for noeud in self.liste_noeuds)
 
@@ -253,10 +367,12 @@ class DiagrammeGant(tk.Frame):
         self.coloriage = self.get_algo_instance().trouver_coloriage(
             self.liste_noeuds, self.max_machine_gap, self.max_time_gap, critere
         )
-        print(f"Nombre de couleurs utilisées : {len(self.coloriage)}")
+        self.nb_couleurs_label.config(
+            text=f"Nombre de couleurs : {len(self.coloriage)}"
+        )
         # On écrit le résultat du coloriage dans un fichier texte
         ecritureFichierColoriage(
-            self.coloriage, "ressources/Planification_modifiee.txt", critere
+            self.coloriage, self.chemin_entree, self.chemin_sortie, critere
         )
         # Redessine
         self.dessine()
@@ -364,6 +480,24 @@ class DiagrammeGant(tk.Frame):
                         font=("Arial", 8),
                         fill="black",
                     )
+
+    def exporter_fichier(self):
+        if not self.chemin_sortie.exists():
+            tk.messagebox.showerror("Erreur", "Aucun fichier à exporter.")
+            return
+
+        destination = filedialog.asksaveasfilename(
+            title="Enregistrer le fichier coloriage",
+            defaultextension=".txt",
+            filetypes=[("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*")],
+        )
+
+        if not destination:
+            return
+
+        shutil.copy(self.chemin_sortie, destination)
+
+        tk.messagebox.showinfo("Succès", "Fichier exporté avec succès !")
 
 
 if __name__ == "__main__":

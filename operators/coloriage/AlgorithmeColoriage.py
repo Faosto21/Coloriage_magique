@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 from typing import List
 from core.Noeud import Noeud
-import numpy as np
+from pathlib import Path
 from datetime import timedelta
 
 
@@ -38,8 +38,8 @@ class AlgorithmeColoriage(ABC):
 
 def ecritureFichierColoriage(
     coloriage: dict[tuple[float, float, float], set[str]],
-    chemin_entree: str,
-    chemin_sortie: str,
+    chemin_entree: Path,
+    chemin_sortie: Path,
     choix_critere: str,
 ):
     """

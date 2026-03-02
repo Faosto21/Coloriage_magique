@@ -2,6 +2,9 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
+import pandas as pd
+from operators.GenerateurTabulaire import generateur_tabulaire
 
 
 def overlap(debut1: datetime, debut2: datetime, fin1: datetime, fin2: datetime) -> bool:
@@ -21,9 +24,10 @@ def overlap(debut1: datetime, debut2: datetime, fin1: datetime, fin2: datetime) 
     """
     return (fin1 > debut2 and debut1 < fin2) or (fin2 > debut1 and debut2 < fin1)
 
+
 # Frozen pour rendre immutable et être utilisé en clé et slots pour optimiser mémoire car objet
 # définit entièrement à l'instance (pas d'attributs dynamique).
-@dataclass(slots=True, frozen=True)  
+@dataclass(slots=True, frozen=True)
 class Noeud:
     """
     Classe représentant une opération de production avec comme attribut toutes les colonnes de Planification.
@@ -113,3 +117,30 @@ class Noeud:
             valeur_critere = noeud.__getattribute__(str(critere))
             partition[valeur_critere].add(noeud)
         return partition
+
+    @staticmethod
+    def creation_noeuds(
+        dossier_planification: Path, dossier_ecriture
+    ) -> tuple[list[Noeud], dict[str, int]]:
+        chemin_planification_modifiee, chemin_machine_modifiee = generateur_tabulaire(
+            dossier_planification, dossier_ecriture
+        )
+
+        data = pd.read_csv(chemin_planification_modifiee, dtype=str, sep=";")
+        machines = pd.read_csv(chemin_machine_modifiee)
+        mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
+        liste_noeuds = [
+            Noeud(
+                i,
+                mapping_machines[ope["centre"]],
+                ope["centre"],
+                ope["codprod"],
+                ope["codof"],
+                ope["sequence"],
+                ope["codop"],
+                datetime.fromisoformat(ope["dtedeb"]),
+                datetime.fromisoformat(ope["dtefin"]),
+            )
+            for i, ope in data.iterrows()
+        ]
+        return liste_noeuds, mapping_machines
