@@ -9,6 +9,7 @@ def fenetre_generer_planification(root):
     """
     Ouvre une fenêtre pour générer une planification aléatoire avec des paramètres personnalisables.
     Permet à l'utilisateur de choisir le chemin de sortie du fichier généré et les paramètres de la planification.
+        :param root: la fenêtre principale de l'application, nécessaire pour créer une fenêtre modale
     """
 
     def generer():
@@ -76,7 +77,17 @@ def generer_planification(
     chemin_sortie: str = "/ressources/Planification.txt",
 ):
     """
-    Version avec paramètres ajustables
+    Genère un fichier de planification aléatoire avec les paramètres spécifiés. \n
+
+    Les centres sont générés aléatoirement avec des préfixes "MAC", "POSTE" ou "LIGNE". \n
+    Les produits sont générés aléatoirement avec des préfixes "PROD", "P", "REF" ou "PRODMO". \n
+    Les opérations sont générées avec des codes "OF" pour les machines et "AF" pour les autres centres. \n
+    Les dates de début et de fin sont générées aléatoirement avec une durée entre 30 minutes et 72 heures, et une date de début dans les 30 derniers jours. \n
+    :param nb_lignes: le nombre de lignes (opérations) à générer dans le fichier de planification
+    :param nb_centres: le nombre de centres différents à générer (par défaut 30)
+    :param nb_produits: le nombre de produits différents à générer (par défaut 30)
+    :param duree_max_jours: la durée maximale en jours entre la date de début et la date de fin des opérations (par défaut 180 jours)
+    :param chemin_sortie: le chemin du fichier de planification généré (par défaut "/ressources/Planification.txt")
     """
     import random
     from datetime import datetime, timedelta
@@ -182,7 +193,7 @@ def generer_planification(
 
 # Utilisation
 if __name__ == "__main__":
-    # 50 000 ope
+    # 10 000 ope
     chemin_dossier = Path(os.path.dirname(__file__)).parent
     chemin_sortie = os.path.join(chemin_dossier, "ressources", "Planification_test.txt")
     generer_planification(

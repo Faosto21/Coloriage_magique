@@ -8,10 +8,11 @@ import sys
 def generateur_tabulaire(chemin_data: Path, dossier_ecriture: Path) -> (Path, Path):
     """Fonction permettant de gérer les chevauchement sur une meme machine (si 2 op ont lieu en même temps)
     et créé un nouvelle "sous-machine" e.g MAC101_1.
-    Génère un fichier Planification_modifiee.txt et Machine_modifiee.txt dans le MEME dossier que le fichier donné en argument
-
-    Args:
-        chemin_data (Path): Chemin vers le fichier Planification.txt
+    Génère un fichier Planification_modifiee.txt et Machine_modifiee.txt dans le dossier d'écriture donné en paramètre.
+    Et renvoie les chemins vers ces fichiers générés.
+    :param chemin_data: chemin vers le fichier de planification à modifier
+    :param dossier_ecriture: chemin vers le dossier où seront écrits les fichiers modifiés
+    :return: les chemins vers les fichiers générés
     """
     data = pd.read_csv(chemin_data, dtype=str, sep=";")
     data["dtedeb"] = pd.to_datetime(data["dtedeb"])
@@ -70,11 +71,3 @@ def generateur_tabulaire(chemin_data: Path, dossier_ecriture: Path) -> (Path, Pa
     machines.to_csv(new_machine_path, index=False)
 
     return new_data_path, new_machine_path
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-
-    # Chemin vers le fichier de planification
-    fichier_planif = Path("ressources/Planification.txt")
-    generateur_tabulaire(fichier_planif)

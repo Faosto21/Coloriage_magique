@@ -43,6 +43,9 @@ def ecritureFichierColoriage(
     choix_critere: str,
 ):
     """
+    Fonction qui écrit le résultat du coloriage dans un fichier .txt. \n
+    Le fichier d'entrée est copié et une colonne "couleur" est ajoutée à la fin du tableau. \n
+    Cette colonne contient la couleur RGB associée à la valeur du critère de chaque ligne.
     :param coloriage: un dico avec la couleur en clé et la liste des criteres à colorier avec cette couleur.
     :param choix_critere: une string correspondant au critère selectionné
     :param chemin_donnees: une string correspondant au chemin du jeu de données utilisé
@@ -85,32 +88,3 @@ def ecritureFichierColoriage(
             )  # vide si pas trouve
 
             f_out.write(line + ";" + str(couleur) + "\n")
-
-
-if __name__ == "__main__":
-    from datetime import datetime
-    import pandas as pd
-
-    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
-    machines = pd.read_csv("ressources/Machine.txt")
-    mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
-    liste_noeuds = [
-        Noeud(
-            i,
-            mapping_machines[ope["centre"]],
-            ope["centre"],
-            ope["codprod"],
-            ope["codof"],
-            ope["sequence"],
-            ope["codop"],
-            datetime.fromisoformat(ope["dtedeb"]),
-            datetime.fromisoformat(ope["dtefin"]),
-        )
-        for i, ope in data.iterrows()
-    ]
-
-    # Test de DSATUR
-    algo_dsat = DSATUR()
-    coloriage = algo_dsat.trouver_coloriage(liste_noeuds=liste_noeuds, critere="codof")
-    print(f"Le coloriage est : {coloriage}")
-    ecritureFichierColoriage(coloriage, "ressources/Planification.txt", "codof")

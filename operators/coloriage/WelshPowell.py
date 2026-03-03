@@ -109,34 +109,3 @@ class WelshPowell(AlgorithmeColoriage):
         }
 
         return coloriage_final
-
-
-if __name__ == "__main__":
-    import pandas as pd
-
-    data = pd.read_csv("ressources/Planification.txt", dtype=str, sep=";")
-    machines = pd.read_csv("ressources/Machine.txt")
-    mapping_machines = {machines["centre"][i]: i for i in range(len(machines))}
-    liste_noeuds = [
-        Noeud(
-            i,
-            mapping_machines[ope["centre"]],
-            ope["centre"],
-            ope["codprod"],
-            ope["codof"],
-            ope["sequence"],
-            ope["codop"],
-            datetime.fromisoformat(ope["dtedeb"]),
-            datetime.fromisoformat(ope["dtefin"]),
-        )
-        for i, ope in data.iterrows()
-    ]
-    partition = Noeud.partition(liste_noeuds, critere="codof")
-    voisins = Noeud.voisins_noeud(
-        liste_noeuds, max_machine_gap=4, max_time_gap=timedelta(days=5)
-    )
-
-    # Test de Welshpowell
-    wp = WelshPowell()
-    coloriage = wp.trouver_coloriage(liste_noeuds=liste_noeuds, critere="codof")
-    print(f"Le coloriage est : {coloriage}")

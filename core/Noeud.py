@@ -122,6 +122,14 @@ class Noeud:
     def creation_noeuds(
         dossier_planification: Path, dossier_ecriture
     ) -> tuple[list[Noeud], dict[str, int]]:
+        """
+        Crée la liste des noeuds et du mapping machine à partir du fichier de planification. \n
+        Le fichier de planification est d'abord traité pour détecter les chevauchements et créer des "sous-machines" si nécessaire. \n
+        Ensuite, la liste des noeuds est créée à partir du fichier modifié.
+        :param dossier_planification: Chemin vers le dossier contenant la planification à traiter
+        :param dossier_ecriture: Chemin vers le dossier où seront écrits les fichiers modifiés
+        :return: La liste des noeuds créés à partir du fichier de planification modifié et le mapping machine -> indice machine
+        """
         chemin_planification_modifiee, chemin_machine_modifiee = generateur_tabulaire(
             dossier_planification, dossier_ecriture
         )
