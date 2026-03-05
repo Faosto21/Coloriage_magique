@@ -1,2 +1,3 @@
 basic-colormath == 1.1.1
-pandas == 2.3.3
+pandas
+numpy
